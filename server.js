@@ -11,7 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 // ⭐ CORS FIX – IMPORTANT ⭐
 app.use(
   cors({
-    origin: ["https://tajtarun.github.io", "http://localhost:5500"],
+    origin: ["https://tajtarun.github.io", "https://tajtarun.github.io/EliteWear", "http://localhost:5500"],
     methods: ["GET", "POST"],
   })
 );
@@ -20,12 +20,12 @@ app.use(
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// ⭐ WAKE-UP ROUTE (Fix Network Error)
+// ⭐ Wake-up route
 app.get("/", (req, res) => {
-  res.send("EliteWear backend is awake.");
+  res.send("EliteWear backend alive.");
 });
 
-// ⭐ Consignment Route
+// ⭐ Consignment upload route
 app.post("/consign", upload.array("images"), async (req, res) => {
   try {
     const { products } = req.body;
@@ -36,7 +36,7 @@ app.post("/consign", upload.array("images"), async (req, res) => {
 
     const parsedProducts = JSON.parse(products);
 
-    // Format email content
+    // Format email
     let html = "<h2>New Consignment Submission</h2>";
     parsedProducts.forEach((p, i) => {
       html += `
@@ -68,7 +68,7 @@ app.post("/consign", upload.array("images"), async (req, res) => {
 
     return res.json({ success: true });
   } catch (err) {
-    console.error("Error:", err);
+    console.error("Server Error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
