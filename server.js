@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ⭐ CORS FIX – IMPORTANT ⭐
+// ⭐ CORSS FIX — REQUIRED FOR GITHUB PAGES ⭐
 app.use(
   cors({
     origin: [
@@ -16,64 +16,60 @@ app.use(
       "https://tajtarun.github.io/EliteWear",
       "http://localhost:5500"
     ],
-    methods: ["GET", "POST"],
+    methods: ["POST"]
   })
 );
 
-// ⭐ Multer File Upload Setup
+// ⭐ Multer File Upload
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({ storage: storage });
 
 // ⭐ Wake-up route
 app.get("/", (req, res) => {
-  res.send("EliteWear backend alive.");
+  res.send("EliteWear backend is alive.");
 });
 
-// ⭐ Consignment upload route
+// ⭐ CONSIGNMENT UPLOAD ROUTE
 app.post("/consign", upload.array("images"), async (req, res) => {
   try {
-    const { products } = req.body;
+    const files = req.files || [];
+    const { names, prices } = req.body;
 
-    if (!products) {
-      return res.status(400).json({ error: "No product data received" });
-    }
+    // convert JSON strings back to arrays
+    const itemNames = JSON.parse(names);
+    const itemPrices = JSON.parse(prices);
 
-    const parsedProducts = JSON.parse(products);
+    let emailHTML = "<h2>New Consignment Submission</h2>";
 
-    let html = "<h2>New Consignment Submission</h2>";
-    parsedProducts.forEach((p, i) => {
-      html += `
-        <h3>Item ${i + 1}</h3>
-        <p><strong>Name:</strong> ${p.name}</p>
-        <p><strong>Price:</strong> ₹${p.price}</p>
-      `;
+    itemNames.forEach((n, i) => {
+      emailHTML += `<p><strong>${n}</strong> — ₹${itemPrices[i]}</p>`;
     });
 
+    // Email sending
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASS,
-      },
+        pass: process.env.PASSWORD
+      }
     });
 
     await transporter.sendMail({
       from: process.env.EMAIL,
       to: process.env.EMAIL,
-      subject: "New Consignment Item Submitted",
-      html,
-      attachments: req.files.map((file, index) => ({
-        filename: `item${index + 1}.jpg`,
-        content: file.buffer,
-      })),
+      subject: "New Consignment Submission",
+      html: emailHTML
     });
 
-    return res.json({ success: true });
+    res.json({ success: true });
+
   } catch (err) {
-    console.error("Server Error:", err);
+    console.error("ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log("Server running on port", port));
+// ⭐ Start server
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
+});
