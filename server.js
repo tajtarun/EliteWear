@@ -11,13 +11,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // -----------------------------
-// CORS FIXED FOR GITHUB PAGES
+// CORS (Important for GitHub Pages)
 // -----------------------------
 app.use(
   cors({
     origin: [
-      "https://tajtarun.github.io",
-      "https://tajtarun.github.io/EliteWear"
+      "https://tajtvarun.github.io",
+      "https://tajtvarun.github.io/EliteWear"
     ],
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
@@ -62,29 +62,35 @@ app.post("/upload-consignment", upload.array("images"), async (req, res) => {
       <hr/>
     `;
 
-    items.forEach((item, i) => {
+    items.forEach((item, index) => {
       html += `
-        <h3>Item ${i + 1}</h3>
+        <h3>Item ${index + 1}</h3>
         <p><strong>Name:</strong> ${item.name}</p>
         <p><strong>Price:</strong> ₹${item.price}</p>
+        <br/>
       `;
     });
 
-    await transporter.sendMail({
+    const mailOptions = {
       from: process.env.EMAIL_USER,
       to: process.env.EMAIL_RECEIVER || process.env.EMAIL_USER,
       subject: "New Consignment Request",
       html,
-      attachments: images.map((file, i) => ({
-        filename: `item-${i + 1}.jpg`,
+      attachments: images.map((file, index) => ({
+        filename: `item-${index + 1}.jpg`,
         content: file.buffer,
       })),
-    });
+    };
 
-    res.json({ success: true, message: "Consignment submitted successfully!" });
+    await transporter.sendMail(mailOptions);
+
+    return res.json({
+      success: true,
+      message: "Consignment submitted successfully!",
+    });
   } catch (err) {
-    console.error("Upload error:", err);
-    res.status(500).json({
+    console.error("Error in consignment upload:", err);
+    return res.status(500).json({
       success: false,
       message: "Server error. Try again later.",
     });
@@ -95,4 +101,6 @@ app.post("/upload-consignment", upload.array("images"), async (req, res) => {
 // Start Server
 // -----------------------------
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Backend running on port ${PORT}`);
+});
