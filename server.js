@@ -11,7 +11,11 @@ app.use(express.urlencoded({ extended: true }));
 // ⭐ CORS FIX – IMPORTANT ⭐
 app.use(
   cors({
-    origin: ["https://tajtarun.github.io", "https://tajtarun.github.io/EliteWear", "http://localhost:5500"],
+    origin: [
+      "https://tajtarun.github.io",
+      "https://tajtarun.github.io/EliteWear",
+      "http://localhost:5500"
+    ],
     methods: ["GET", "POST"],
   })
 );
@@ -36,7 +40,6 @@ app.post("/consign", upload.array("images"), async (req, res) => {
 
     const parsedProducts = JSON.parse(products);
 
-    // Format email
     let html = "<h2>New Consignment Submission</h2>";
     parsedProducts.forEach((p, i) => {
       html += `
@@ -46,7 +49,6 @@ app.post("/consign", upload.array("images"), async (req, res) => {
       `;
     });
 
-    // Email sender
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -73,6 +75,5 @@ app.post("/consign", upload.array("images"), async (req, res) => {
   }
 });
 
-// ⭐ PORT
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log("Server running on port", port));
