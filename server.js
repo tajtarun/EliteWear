@@ -1,87 +1,78 @@
-// -------------------------
-//  IMPORTS
-// -------------------------
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const nodemailer = require("nodemailer");
+require("dotenv").config();
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// -------------------------
-//  CORS FIX (IMPORTANT FOR GITHUB PAGES)
-// -------------------------
+// ⭐ CORS FIX – IMPORTANT ⭐
 app.use(
   cors({
-    origin: "*", // allow GitHub pages
+    origin: ["https://tajtarun.github.io", "http://localhost:5500"],
     methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
   })
 );
 
-// -------------------------
-//  CREATE UPLOADS FOLDER IF NOT EXISTS
-// -------------------------
-const uploadFolder = path.join(__dirname, "uploads");
+// ⭐ Multer File Upload Setup
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-if (!fs.existsSync(uploadFolder)) {
-  fs.mkdirSync(uploadFolder);
-}
-
-// -------------------------
-//  MULTER STORAGE
-// -------------------------
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadFolder);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, Date.now() + ext);
-  },
+// ⭐ WAKE-UP ROUTE (Fix Network Error)
+app.get("/", (req, res) => {
+  res.send("EliteWear backend is awake.");
 });
 
-const upload = multer({ storage: storage });
-
-// -------------------------
-//  API: Receive Consignment Items
-// -------------------------
-app.post("/upload-consign", upload.array("images", 20), (req, res) => {
+// ⭐ Consignment Route
+app.post("/consign", upload.array("images"), async (req, res) => {
   try {
-    const images = req.files;
-    const { items } = req.body;
+    const { products } = req.body;
 
-    const parsedItems = JSON.parse(items);
+    if (!products) {
+      return res.status(400).json({ error: "No product data received" });
+    }
 
-    const finalData = parsedItems.map((item, index) => ({
-      name: item.name,
-      price: item.price,
-      image: images[index] ? images[index].filename : null,
-    }));
+    const parsedProducts = JSON.parse(products);
 
-    console.log("Received:", finalData);
-
-    return res.json({
-      success: true,
-      message: "Items uploaded successfully!",
-      data: finalData,
+    // Format email content
+    let html = "<h2>New Consignment Submission</h2>";
+    parsedProducts.forEach((p, i) => {
+      html += `
+        <h3>Item ${i + 1}</h3>
+        <p><strong>Name:</strong> ${p.name}</p>
+        <p><strong>Price:</strong> ₹${p.price}</p>
+      `;
     });
+
+    // Email sender
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL,
+      to: process.env.EMAIL,
+      subject: "New Consignment Item Submitted",
+      html,
+      attachments: req.files.map((file, index) => ({
+        filename: `item${index + 1}.jpg`,
+        content: file.buffer,
+      })),
+    });
+
+    return res.json({ success: true });
   } catch (err) {
-    console.error("❌ Server Error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    console.error("Error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-// -------------------------
-//  START SERVER
-// -------------------------
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
-});
+// ⭐ PORT
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log("Server running on port", port));
