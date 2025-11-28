@@ -1,49 +1,82 @@
-// ----------------------------
-// FIXED: CORRECT BACKEND URL
-// ----------------------------
-const ENDPOINT = "https://elitewear-backend.onrender.com/consign";
+const backendURL = "https://elitewear-backend.onrender.com/consign";
 
-// HANDLE FORM SUBMIT
-document.getElementById("consignmentForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
+let items = [];
 
-    const formData = new FormData(this);
+function renderItems() {
+  const container = document.getElementById("itemsContainer");
+  container.innerHTML = "";
 
-    try {
-        const response = await fetch(ENDPOINT, {
-            method: "POST",
-            body: formData
-        });
+  items.forEach((item, index) => {
+    container.innerHTML += `
+      <div class="item-card">
+        <input type="file" accept="image/*" onchange="uploadImage(event, ${index})">
 
-        if (!response.ok) {
-            alert("Upload failed. Please try again.");
-            return;
-        }
+        <input type="text" placeholder="Product Name" 
+          value="${item.name}" 
+          onchange="items[${index}].name = this.value">
 
-        // Redirect to thank you page
-        window.location.href = "consignment_thankyou.html";
+        <input type="number" placeholder="Price ₹"
+          value="${item.price}"
+          onchange="items[${index}].price = this.value">
 
-    } catch (error) {
-        console.error(error);
-        alert("Network Error! Please check connection.");
+        <button onclick="removeItem(${index})">Remove</button>
+      </div>
+    `;
+  });
+}
+
+function uploadImage(event, index) {
+  items[index].file = event.target.files[0];
+}
+
+document.getElementById("addItemBtn").onclick = () => {
+  items.push({ name: "", price: "", file: null });
+  renderItems();
+};
+
+function removeItem(i) {
+  items.splice(i, 1);
+  renderItems();
+}
+
+document.getElementById("submitBtn").onclick = async () => {
+  const error = document.getElementById("errorMessage");
+  error.textContent = "";
+
+  const form = new FormData();
+
+  const names = items.map(i => i.name);
+  const prices = items.map(i => i.price);
+
+  form.append("names", JSON.stringify(names));
+  form.append("prices", JSON.stringify(prices));
+
+  items.forEach(item => {
+    if (item.file) {
+      form.append("images", item.file);
     }
-});
+  });
 
+  try {
+    const res = await fetch(backendURL, {
+      method: "POST",
+      body: form
+    });
 
-// ----------------------------
-// IMAGE PREVIEW (your old code)
-// ----------------------------
-const fileInput = document.getElementById("imageUpload");
-const previewBox = document.getElementById("previewBox");
+    if (!res.ok) throw new Error("Failed");
 
-fileInput.addEventListener("change", function () {
-    const file = this.files[0];
-    if (!file) return;
+    const data = await res.json();
 
-    const reader = new FileReader();
-    reader.onload = function () {
-        previewBox.style.backgroundImage = `url('${reader.result}')`;
-        previewBox.classList.add("filled"); 
-    };
-    reader.readAsDataURL(file);
-});
+    if (data.success) {
+      window.location.href = "thankyou-consignment.html";
+    } else {
+      error.textContent = "Server error.";
+    }
+
+  } catch (err) {
+    error.textContent = "Network error.";
+  }
+};
+
+// initial render
+renderItems();
