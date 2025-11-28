@@ -1,77 +1,114 @@
-const express = require('express');
-const nodemailer = require('nodemailer');
-const multer = require('multer');
-const cors = require('cors');
+// server.js  --- FINAL WORKING VERSION FOR RENDER + GITHUB PAGES
+
+const express = require("express");
+const cors = require("cors");
+const multer = require("multer");
+const nodemailer = require("nodemailer");
+require("dotenv").config();
 
 const app = express();
-const PORT = 5500;  // ✅ SAME port as Live Server
-
-app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Multer memory storage
+// -----------------------------
+// CORS (Important for GitHub Pages)
+// -----------------------------
+app.use(
+  cors({
+    origin: "https://tajtvarun.github.io", // your GitHub website
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
+
+// -----------------------------
+// Multer - Handle Image Upload
+// -----------------------------
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
-// =============================
-// CONSIGNMENT EMAIL ENDPOINT
-// =============================
-app.post('/submit-consignment', upload.array('files'), async (req, res) => {
-    try {
-        const files = req.files;
-        const names = req.body['names[]'];
-        const prices = req.body['prices[]'];
-
-        // Ensure arrays
-        const itemNames = Array.isArray(names) ? names : [names];
-        const itemPrices = Array.isArray(prices) ? prices : [prices];
-
-        let emailText = "New Consignment Submission:\n\n";
-
-        for (let i = 0; i < itemNames.length; i++) {
-            emailText += `Item ${i + 1}:\n`;
-            emailText += `Name: ${itemNames[i] || "Not provided"}\n`;
-            emailText += `Price: ₹${itemPrices[i] || "Not provided"}\n\n`;
-        }
-
-        // Attach uploaded images
-        let attachments = [];
-        if (files) {
-            attachments = files.map((file, i) => ({
-                filename: file.originalname || `item${i + 1}.jpg`,
-                content: file.buffer
-            }));
-        }
-
-        // Configure Gmail
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: "jtarunhyd@gmail.com",
-                pass: "wseb nome mslo ovdo"   // Your Gmail App Password
-            }
-        });
-
-        // Email settings
-        const mailOptions = {
-            from: "jtarunhyd@gmail.com",
-            to: "jtarunhyd@gmail.com",
-            subject: "New Consignment Submission",
-            text: emailText,
-            attachments: attachments
-        };
-
-        await transporter.sendMail(mailOptions);
-
-        return res.json({ success: true, message: "Email sent successfully!" });
-
-    } catch (err) {
-        console.error("Email Error:", err);
-        return res.status(500).json({ success: false, error: String(err) });
-    }
+// -----------------------------
+// Email Setup (Render environment variables required)
+// -----------------------------
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER, // set on Render
+    pass: process.env.EMAIL_PASS, // set on Render
+  },
 });
 
-// Start server on port 5500
+// -----------------------------
+// Main Route (Check Server)
+// -----------------------------
+app.get("/", (req, res) => {
+  res.send("EliteWear backend server is running!");
+});
+
+// -----------------------------
+// Consignment Upload API
+// -----------------------------
+app.post("/upload-consignment", upload.array("images"), async (req, res) => {
+  try {
+    const items = JSON.parse(req.body.items); // name + price
+    const images = req.files;
+
+    console.log("Received items:", items);
+
+    // -------------------------
+    // Create Email HTML
+    // -------------------------
+    let html = `
+      <h2>New Consignment Request</h2>
+      <p><strong>Total Items:</strong> ${items.length}</p>
+      <hr/>
+    `;
+
+    items.forEach((item, index) => {
+      html += `
+        <h3>Item ${index + 1}</h3>
+        <p><strong>Name:</strong> ${item.name}</p>
+        <p><strong>Price:</strong> ₹${item.price}</p>
+        <br/>
+      `;
+    });
+
+    // -------------------------
+    // Email Options
+    // -------------------------
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_RECEIVER || process.env.EMAIL_USER,
+      subject: "New Consignment Request",
+      html,
+      attachments: images.map((file, index) => ({
+        filename: `item-${index + 1}.jpg`,
+        content: file.buffer,
+      })),
+    };
+
+    // -------------------------
+    // Send Email
+    // -------------------------
+    await transporter.sendMail(mailOptions);
+
+    return res.json({
+      success: true,
+      message: "Consignment submitted successfully!",
+    });
+  } catch (err) {
+    console.error("Error in consignment upload:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error. Try again later.",
+    });
+  }
+});
+
+// -----------------------------
+// Start Server (Render uses process.env.PORT)
+// -----------------------------
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Backend running on port ${PORT}`);
 });
