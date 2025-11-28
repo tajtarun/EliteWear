@@ -1,83 +1,121 @@
-// Add first card when page loads
-window.onload = () => {
-    addNewCard();
-};
+// consignment.js — FINAL WORKING VERSION
 
-function addNewCard() {
-    const container = document.getElementById("itemsContainer");
+const API_URL = "https://elitewear-backend.onrender.com/upload-consignment";
 
-    const card = document.createElement("div");
-    card.className = "item-card";
+let itemCount = 1;
 
-    card.innerHTML = `
-        <div class="image-box">+</div>
-        <input type="file" accept="image/*" hidden>
-        
-        <div class="inputs">
-            <input type="text" placeholder="Product Name" class="pname">
-            <input type="number" placeholder="Product Price" class="pprice">
-        </div>
-    `;
-
-    const imgBox = card.querySelector(".image-box");
-    const fileInput = card.querySelector("input[type='file']");
-    const nameInput = card.querySelector(".pname");
-    const priceInput = card.querySelector(".pprice");
-
-    // Click image box → open gallery
-    imgBox.addEventListener("click", () => fileInput.click());
-
-    // After selecting image → show preview
-    fileInput.addEventListener("change", () => {
-        if (fileInput.files.length > 0) {
-            const url = URL.createObjectURL(fileInput.files[0]);
-            imgBox.innerHTML = `<img src="${url}">`;
-            checkAndAddNewCard();
-        }
-    });
-
-    // When typing name/price → check if new card needed
-    nameInput.addEventListener("input", checkAndAddNewCard);
-    priceInput.addEventListener("input", checkAndAddNewCard);
-
-    container.appendChild(card);
-}
-
-// Check last card — if all filled → add new card
-function checkAndAddNewCard() {
-    const cards = document.querySelectorAll(".item-card");
-    const lastCard = cards[cards.length - 1];
-
-    const imgSelected = lastCard.querySelector("input[type='file']").files.length > 0;
-    const nameFilled = lastCard.querySelector(".pname").value.trim() !== "";
-    const priceFilled = lastCard.querySelector(".pprice").value.trim() !== "";
-
-    if (imgSelected && nameFilled && priceFilled) {
-        addNewCard();
-    }
-}
-
-document.getElementById("submitBtn").addEventListener("click", () => {
-    const items = [];
-
-    const cards = document.querySelectorAll(".item-card");
-    cards.forEach(card => {
-        const fileInput = card.querySelector("input[type='file']");
-        const name = card.querySelector(".pname").value.trim();
-        const price = card.querySelector(".pprice").value.trim();
-
-        if (fileInput.files.length > 0 && name && price) {
-            items.push({
-                image: fileInput.files[0],
-                name,
-                price
-            });
-        }
-    });
-
-    console.log("Items ready to upload:", items);
-
-    alert("Items collected! Now send them to backend with fetch().");
-
-    // You can add your backend API upload here.
+// Add first empty item row automatically
+document.addEventListener("DOMContentLoaded", () => {
+  addItemRow();
 });
+
+function addItemRow() {
+  const container = document.getElementById("items-container");
+
+  const itemHTML = `
+    <div class="item-row" id="item-${itemCount}">
+      
+      <div class="image-box" onclick="selectImage(${itemCount})">
+        <span class="item-label">Item ${itemCount}</span>
+        <input type="file" accept="image/*" id="image-${itemCount}" style="display:none" onchange="previewImage(event, ${itemCount})">
+        <img id="preview-${itemCount}" class="preview-img" src="" style="display:none">
+        <div class="plus">+</div>
+      </div>
+
+      <input type="text" class="input" id="name-${itemCount}" placeholder="Product Name">
+      <input type="number" class="input" id="price-${itemCount}" placeholder="Price ₹">
+
+      <button class="remove-btn" onclick="removeItem(${itemCount})">Remove</button>
+    </div>
+  `;
+
+  container.insertAdjacentHTML("beforeend", itemHTML);
+  itemCount++;
+}
+
+function selectImage(id) {
+  document.getElementById(`image-${id}`).click();
+}
+
+function previewImage(event, id) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const img = document.getElementById(`preview-${id}`);
+  img.src = URL.createObjectURL(file);
+  img.style.display = "block";
+
+  // Add next row automatically only if this is the last row
+  if (id === itemCount - 1) {
+    addItemRow();
+  }
+}
+
+function removeItem(id) {
+  document.getElementById(`item-${id}`).remove();
+}
+
+async function submitAll() {
+  const formData = new FormData();
+  const items = [];
+
+  for (let i = 1; i < itemCount; i++) {
+    const name = document.getElementById(`name-${i}`);
+    const price = document.getElementById(`price-${i}`);
+    const img = document.getElementById(`image-${i}`);
+
+    if (!name || !price || !img) continue;
+    if (!img.files[0]) continue;
+
+    items.push({
+      name: name.value.trim(),
+      price: price.value.trim()
+    });
+
+    formData.append("images", img.files[0]);
+  }
+
+  if (items.length === 0) {
+    showError("Please upload at least one item.");
+    return;
+  }
+
+  formData.append("items", JSON.stringify(items));
+
+  showLoading();
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      showSuccess("Consignment submitted successfully!");
+    } else {
+      showError(data.message);
+    }
+  } catch (err) {
+    console.error(err);
+    showError("Network error. Check backend server.");
+  }
+}
+
+// ---------------- UI Helpers ----------------
+
+function showLoading() {
+  document.getElementById("status").innerHTML =
+    `<div class="loading">Uploading...</div>`;
+}
+
+function showSuccess(msg) {
+  document.getElementById("status").innerHTML =
+    `<div class="success">${msg}</div>`;
+}
+
+function showError(msg) {
+  document.getElementById("status").innerHTML =
+    `<div class="error">${msg}</div>`;
+}
