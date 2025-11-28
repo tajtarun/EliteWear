@@ -1,106 +1,87 @@
-// server.js  --- FINAL WORKING VERSION FOR RENDER + GITHUB PAGES
-
+// -------------------------
+//  IMPORTS
+// -------------------------
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const nodemailer = require("nodemailer");
-require("dotenv").config();
+const path = require("path");
+const fs = require("fs");
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// -----------------------------
-// CORS (Important for GitHub Pages)
-// -----------------------------
+// -------------------------
+//  CORS FIX (IMPORTANT FOR GITHUB PAGES)
+// -------------------------
 app.use(
   cors({
-    origin: [
-      "https://tajtvarun.github.io",
-      "https://tajtvarun.github.io/EliteWear"
-    ],
+    origin: "*", // allow GitHub pages
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
 );
 
-// -----------------------------
-// Multer - Handle Image Upload
-// -----------------------------
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+// -------------------------
+//  CREATE UPLOADS FOLDER IF NOT EXISTS
+// -------------------------
+const uploadFolder = path.join(__dirname, "uploads");
 
-// -----------------------------
-// Email Setup
-// -----------------------------
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+if (!fs.existsSync(uploadFolder)) {
+  fs.mkdirSync(uploadFolder);
+}
+
+// -------------------------
+//  MULTER STORAGE
+// -------------------------
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadFolder);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, Date.now() + ext);
   },
 });
 
-// -----------------------------
-// Main Route
-// -----------------------------
-app.get("/", (req, res) => {
-  res.send("EliteWear backend server is running!");
-});
+const upload = multer({ storage: storage });
 
-// -----------------------------
-// Consignment Upload API
-// -----------------------------
-app.post("/upload-consignment", upload.array("images"), async (req, res) => {
+// -------------------------
+//  API: Receive Consignment Items
+// -------------------------
+app.post("/upload-consign", upload.array("images", 20), (req, res) => {
   try {
-    const items = JSON.parse(req.body.items);
     const images = req.files;
+    const { items } = req.body;
 
-    let html = `
-      <h2>New Consignment Request</h2>
-      <p><strong>Total Items:</strong> ${items.length}</p>
-      <hr/>
-    `;
+    const parsedItems = JSON.parse(items);
 
-    items.forEach((item, index) => {
-      html += `
-        <h3>Item ${index + 1}</h3>
-        <p><strong>Name:</strong> ${item.name}</p>
-        <p><strong>Price:</strong> ₹${item.price}</p>
-        <br/>
-      `;
-    });
+    const finalData = parsedItems.map((item, index) => ({
+      name: item.name,
+      price: item.price,
+      image: images[index] ? images[index].filename : null,
+    }));
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_RECEIVER || process.env.EMAIL_USER,
-      subject: "New Consignment Request",
-      html,
-      attachments: images.map((file, index) => ({
-        filename: `item-${index + 1}.jpg`,
-        content: file.buffer,
-      })),
-    };
-
-    await transporter.sendMail(mailOptions);
+    console.log("Received:", finalData);
 
     return res.json({
       success: true,
-      message: "Consignment submitted successfully!",
+      message: "Items uploaded successfully!",
+      data: finalData,
     });
   } catch (err) {
-    console.error("Error in consignment upload:", err);
+    console.error("❌ Server Error:", err);
     return res.status(500).json({
       success: false,
-      message: "Server error. Try again later.",
+      message: "Server error",
     });
   }
 });
 
-// -----------------------------
-// Start Server
-// -----------------------------
+// -------------------------
+//  START SERVER
+// -------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`);
+  console.log("Server running on port " + PORT);
 });
