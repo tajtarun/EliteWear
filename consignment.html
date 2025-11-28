@@ -1,186 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>EliteWear — Consignment</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-<style>
-:root { --bg:#0b0b0c; --card:#111; --gold:#d4af37; --muted:#bfb8ad;}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);font-family:'Poppins';color:#eee;min-height:100vh}
-.container{max-width:900px;margin:40px auto;background:linear-gradient(180deg,#0f0f10,#0b0b0b);padding:26px;border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,0.6)}
-h1{color:var(--gold);margin:0 0 8px}
-p{color:var(--muted);line-height:1.6}
-.sell-btn{background:linear-gradient(90deg,var(--gold),#f3e0a8);color:#000;padding:12px 18px;font-weight:800;border:none;border-radius:10px;margin-top:18px;cursor:pointer;box-shadow:0 12px 38px rgba(212,175,55,0.06);transition:transform .18s}
-.sell-btn:active{transform:scale(.99)}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consignment – EliteWear</title>
 
-/* popup background + animation */
-.popup-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter: blur(2px);justify-content:center;align-items:center;z-index:1000}
-.popup{width:95%;max-width:1050px;background:linear-gradient(180deg,#0f0f10,#0b0b0b);padding:18px;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.7);transform:translateY(16px) scale(.98);opacity:0;transition:transform .42s cubic-bezier(.2,.9,.2,1), opacity .42s}
-.popup.open{transform:translateY(0) scale(1);opacity:1}
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-/* row styles */
-.row{display:flex;gap:18px;background:#0e0e0e;padding:14px;border-radius:12px;margin-bottom:12px;align-items:center;transform:translateY(16px);opacity:0;transition:transform .4s ease,opacity .4s}
-.row.show{transform:none;opacity:1}
-.left{width:140px;height:140px;border-radius:12px;border:2px dashed rgba(212,175,55,0.18);background:#0b0b0b;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;cursor:pointer}
-.left img{width:100%;height:100%;object-fit:cover;display:none}
-.plus{color:var(--gold);font-size:40px;font-weight:700}
-.index-badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.4);padding:6px 10px;border-radius:8px;color:var(--gold);font-size:12px}
-.fields{display:flex;gap:12px;flex:1}
-.fields input{padding:10px;border:none;border-radius:8px;background:#111;color:#eee;flex:1;outline:none}
-.remove-row{background:#222;padding:8px 12px;border:none;color:#eee;border-radius:8px;cursor:pointer}
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: #000;
+            color: white;
+        }
 
-/* submit + status */
-.submit-btn{background:linear-gradient(90deg,var(--gold),#f3e0a8);color:#000;padding:12px 18px;border:none;border-radius:10px;font-weight:800;margin-top:12px;cursor:pointer}
-.status{margin-top:12px;padding:10px;border-radius:8px}
-.status.success{background:rgba(212,175,55,0.08);color:var(--gold)}
-.status.error{background:rgba(255,0,0,0.06);color:#ff7b7b}
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 40px auto;
+            background: rgba(255,255,255,0.05);
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.1);
+        }
 
-/* micro animation for added rows (Option C) */
-.row-add { animation:popIn .36s cubic-bezier(.2,.9,.2,1) }
-@keyframes popIn{0%{transform:scale(.98) translateY(10px);opacity:0}60%{transform:scale(1.02) translateY(-4px)}100%{transform:none;opacity:1}}
+        h1 {
+            font-size: 32px;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #d4af37;
+        }
 
-/* responsive */
-@media (max-width:720px){ .row{flex-direction:column;align-items:stretch} .left{width:100%;height:200px} .fields{flex-direction:column} }
-</style>
+        .item-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.06);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+        }
+
+        .item-card img {
+            width: 110px;
+            height: 110px;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 15px;
+        }
+
+        .add-box {
+            width: 110px;
+            height: 110px;
+            background: rgba(255,255,255,0.05);
+            border: 2px dashed #d4af37;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            color: #d4af37;
+            cursor: pointer;
+        }
+
+        button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #d4af37;
+            font-size: 16px;
+            color: black;
+            margin-top: 20px;
+        }
+
+        #result {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            background: rgba(255,0,0,0.2);
+            display: none;
+        }
+    </style>
 </head>
 <body>
 
-<div class="container">
-  <h1>What is Consignment?</h1>
-  <p>Consignment means you allow us to sell your item on your behalf. You submit product details and images; our team reviews and lists it. After sale, you receive payment.</p>
+    <div class="container">
+        <h1>Upload Items for Consignment</h1>
 
-  <h1 style="margin-top:20px">How It Works</h1>
-  <p>Click <strong>Sell Your Items Here</strong>, fill item name & price and upload item image. Submit — our team receives your submission.</p>
+        <div id="itemList"></div>
 
-  <button class="sell-btn" id="openUploader">Sell Your Items Here</button>
-</div>
+        <div class="add-box" onclick="addItem()">+</div>
 
-<!-- Popup uploader -->
-<div class="popup-bg" id="popupBg" aria-hidden="true">
-  <div class="popup" role="dialog" aria-modal="true" aria-label="Upload Items">
-    <h2 style="color:var(--gold);margin:0 0 12px">Upload Items</h2>
-    <div id="rowsContainer" aria-live="polite"></div>
+        <button onclick="submitAll()">Submit All</button>
 
-    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-      <button class="submit-btn" id="submitAll">Submit All</button>
-      <button class="remove-row" id="closePopup">Close</button>
-      <div id="statusBox" style="flex:1"></div>
+        <div id="result"></div>
     </div>
-  </div>
-</div>
 
-<script>
-/* Consignment uploader with animations (keeps your original server flow) */
-const ENDPOINT = "http://localhost:5500/submit-consignment";
-
-const openUploader = document.getElementById("openUploader");
-const popupBg = document.getElementById("popupBg");
-const popup = document.querySelector('.popup');
-const closePopup = document.getElementById("closePopup");
-const rowsContainer = document.getElementById("rowsContainer");
-const submitAll = document.getElementById("submitAll");
-const statusBox = document.getElementById("statusBox");
-
-let rowCount = 0;
-
-function focusFirstInput(row){
-  const inp = row.querySelector('input[placeholder="Product Name"]');
-  if(inp) inp.focus();
-}
-
-function createRow(previewUrl = null){
-  rowCount++;
-  const row = document.createElement('div'); row.className = 'row row-add';
-
-  const left = document.createElement('div'); left.className = 'left';
-  const plus = document.createElement('div'); plus.className = 'plus'; plus.textContent = '+';
-  const badge = document.createElement('div'); badge.className = 'index-badge'; badge.textContent = 'Item ' + rowCount;
-  const img = document.createElement('img');
-  const fileInput = document.createElement('input'); fileInput.type='file'; fileInput.accept='image/*'; fileInput.style.display='none';
-
-  left.appendChild(badge); left.appendChild(plus); left.appendChild(img); left.appendChild(fileInput);
-  left.onclick = () => fileInput.click();
-
-  fileInput.onchange = () => {
-    const file = fileInput.files[0];
-    if(file){
-      img.src = URL.createObjectURL(file); img.style.display='block'; plus.style.display='none';
-      left.style.border = '2px solid var(--gold)';
-      // if last row, auto add another row
-      if(row === rowsContainer.lastElementChild) createRow();
-    }
-  };
-
-  if(previewUrl){
-    img.src = previewUrl; img.style.display='block'; plus.style.display='none'; left.style.border = '2px solid var(--gold)';
-  }
-
-  const fields = document.createElement('div'); fields.className = 'fields';
-  const nameInput = document.createElement('input'); nameInput.placeholder='Product Name';
-  const priceInput = document.createElement('input'); priceInput.placeholder='Price ₹'; priceInput.type='number';
-  fields.appendChild(nameInput); fields.appendChild(priceInput);
-
-  const removeBtn = document.createElement('button'); removeBtn.className='remove-row'; removeBtn.textContent='Remove';
-  removeBtn.onclick = () => {
-    if(rowsContainer.children.length > 1) { row.remove(); } else {
-      // reset fields
-      nameInput.value=''; priceInput.value=''; fileInput.value=''; img.style.display='none'; plus.style.display='block'; left.style.border='2px dashed rgba(212,175,55,0.18)';
-    }
-  };
-
-  row.appendChild(left); row.appendChild(fields); row.appendChild(removeBtn);
-  rowsContainer.appendChild(row);
-
-  // show with small reveal
-  requestAnimationFrame(()=> setTimeout(()=> row.classList.add('show'), 20));
-  focusFirstInput(row);
-}
-
-openUploader.addEventListener('click', ()=>{
-  popupBg.style.display = 'flex';
-  popup.classList.remove('open');
-  // tiny delay for entrance animation
-  setTimeout(()=> popup.classList.add('open'), 30);
-
-  rowsContainer.innerHTML=''; rowCount=0; createRow();
-});
-
-closePopup.addEventListener('click', ()=> {
-  popup.classList.remove('open');
-  setTimeout(()=> popupBg.style.display = 'none', 420);
-});
-
-submitAll.addEventListener('click', async () => {
-  statusBox.innerHTML=''; const rows = Array.from(rowsContainer.children);
-  const fd = new FormData(); let anyImage = false;
-
-  rows.forEach((row,i) => {
-    const fileInput = row.querySelector('input[type="file"]');
-    const name = row.querySelector('input[placeholder="Product Name"]').value || '';
-    const price = row.querySelector('input[placeholder="Price ₹"]').value || '';
-
-    if(fileInput && fileInput.files && fileInput.files.length) { fd.append('files', fileInput.files[0]); anyImage=true; }
-    fd.append('names[]', name);
-    fd.append('prices[]', price);
-  });
-
-  if(!anyImage){ statusBox.innerHTML = '<div class="status error">Please upload at least one image.</div>'; return; }
-
-  statusBox.innerHTML = '<div class="status">Sending — please wait…</div>';
-  submitAll.disabled = true;
-
-  try {
-    const res = await fetch(ENDPOINT, {method:'POST', body:fd});
-    const data = await res.json();
-    if(data.success){ window.location.href = 'thankyou-consignment.html'; }
-    else statusBox.innerHTML = '<div class="status error">Server error. Try again.</div>';
-  } catch(err){
-    statusBox.innerHTML = '<div class="status error">Network error. Is the server running?</div>';
-  } finally { submitAll.disabled = false; }
-});
-</script>
+    <script src="consignment.js"></script>
 
 </body>
 </html>
