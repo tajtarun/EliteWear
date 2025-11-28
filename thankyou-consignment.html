@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Thank You — Consignment Submitted</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0b0c;--card:#111;--gold:#d4af37;--muted:#bfb8ad}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:linear-gradient(180deg,var(--bg),#070707);
+  display:flex;justify-content:center;align-items:center;
+  margin:0;padding:20px;font-family:Poppins, sans-serif;color:#fff;
+}
+.box{
+  background:linear-gradient(180deg,#111,#0b0b0b);
+  padding:40px;border-radius:14px;text-align:center;
+  width:90%;max-width:420px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);
+}
+h1{color:var(--gold);margin-bottom:12px}
+p{color:#ccc;line-height:1.6}
+
+/* FORM */
+input{
+  width:100%;padding:12px;margin-top:10px;border:none;
+  border-radius:8px;background:#171717;color:#eee;outline:none;
+}
+button{
+  margin-top:14px;padding:12px;width:100%;border:none;
+  border-radius:10px;cursor:pointer;font-weight:700;
+  background:linear-gradient(90deg,var(--gold),#f3e0a8);
+  color:#000;
+}
+
+/* HIDDEN THANK YOU SECTION */
+#thankSection{display:none;margin-top:20px}
+.progress-ring{
+  height:8px;background:rgba(255,255,255,0.03);
+  border-radius:999px;margin-top:18px;overflow:hidden;
+}
+.progress-ring i{
+  display:block;height:100%;width:0%;
+  background:linear-gradient(90deg,var(--gold),#f3e0a8);
+  transition:width .9s cubic-bezier(.2,.9,.2,1);
+}
+</style>
+</head>
+<body>
+
+<div class="box">
+  
+  <!-- STEP 1 — FORM -->
+  <h1>Almost Done!</h1>
+  <p>Please provide your phone number and Gmail address so we can contact you.</p>
+
+  <div id="formSection">
+    <input type="tel" id="phone" placeholder="Your Phone Number" required>
+    <input type="email" id="email" placeholder="Your Gmail Address" required>
+    <button id="submitDetails">Submit</button>
+  </div>
+
+  <!-- STEP 2 — THANK YOU + PROGRESS -->
+  <div id="thankSection">
+    <h1>Thank You!</h1>
+    <p>Your details have been received. Our team will contact you shortly.</p>
+
+    <div class="progress-ring"><i id="pr"></i></div>
+    <p style="font-size:13px;color:#bbb;margin-top:12px">You will be redirected in a moment...</p>
+  </div>
+
+</div>
+
+<script>
+const formSection = document.getElementById("formSection");
+const thankSection = document.getElementById("thankSection");
+const submitBtn = document.getElementById("submitDetails");
+const pr = document.getElementById("pr");
+
+submitBtn.onclick = () => {
+  const phone = document.getElementById("phone").value.trim();
+  const email = document.getElementById("email").value.trim();
+
+  if(!phone || !email){
+    alert("Please enter both your phone number and Gmail address.");
+    return;
+  }
+
+  // STEP 1 → STEP 2 transition
+  formSection.style.display = "none";
+  thankSection.style.display = "block";
+
+  // Animate progress bar
+  setTimeout(()=> pr.style.width="40%", 250);
+  setTimeout(()=> pr.style.width="85%", 900);
+  setTimeout(()=> pr.style.width="100%", 1600);
+
+  // Redirect
+  setTimeout(()=> location.href = "index.html", 5000);
+};
+</script>
+
+</body>
+</html>

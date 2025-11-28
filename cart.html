@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🛒 Cart</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0b0c;--card:#111;--muted:#bfb8ad;--gold:#d4af37}
+body{margin:0;background:var(--bg);color:#fff;font-family:Poppins}
+.container{max-width:940px;margin:28px auto;padding:18px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.header h1{margin:0;font-size:22px}
+.list{display:flex;flex-direction:column;gap:12px}
+.card{display:flex;gap:12px;background:var(--card);padding:12px;border-radius:12px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+.card img{width:96px;height:76px;object-fit:cover;border-radius:8px}
+.details{flex:1}
+.title{font-weight:700;margin-bottom:6px}
+.price-row{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.remove{background:#2b2b2b;border:none;padding:8px 10px;border-radius:8px;color:#fff;cursor:pointer}
+.summary{margin-top:18px;background:#0e0e0e;padding:14px;border-radius:12px;display:flex;justify-content:space-between;align-items:center}
+.checkout{background:linear-gradient(90deg,var(--gold),#f3e0a8);border:none;padding:10px 16px;border-radius:10px;font-weight:800;cursor:pointer;color:#000}
+.empty{padding:40px;text-align:center;color:var(--muted);background:var(--card);border-radius:12px}
+.link-back{display:block;margin-top:12px;color:var(--gold);text-decoration:none}
+@media(max-width:720px){ .card{flex-direction:row} .card img{width:76px;height:60px}}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>🛒 Cart</h1>
+    <div id="count" style="color:#bfb8ad">0 items</div>
+  </div>
+
+  <div id="itemsRoot" class="list"></div>
+
+  <div id="emptyMsg" class="empty" style="display:none">
+    Your cart is empty.<br>
+    <a class="link-back" href="index.html">← Back to shopping</a>
+  </div>
+
+  <div id="summary" style="display:none">
+    <div class="summary">
+      <div>
+        <div style="color:#bfb8ad">Total</div>
+        <div id="totalAmt" style="font-weight:800;font-size:18px">₹0</div>
+      </div>
+      <div>
+        <button id="checkoutBtn" class="checkout">Proceed to Checkout</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function readCart(){
+  try{ return JSON.parse(localStorage.getItem('cart')) || []; } catch(e){ return []; }
+}
+
+function render(){
+  const items = readCart();
+  const root = document.getElementById('itemsRoot');
+  const empty = document.getElementById('emptyMsg');
+  const summary = document.getElementById('summary');
+  const count = document.getElementById('count');
+
+  root.innerHTML = '';
+  if(!items || items.length===0){
+    empty.style.display = 'block';
+    summary.style.display = 'none';
+    count.textContent = '0 items';
+    return;
+  }
+  empty.style.display = 'none';
+  summary.style.display = 'block';
+  count.textContent = items.length + (items.length>1 ? ' items' : ' item');
+
+  let total = 0;
+  items.forEach((it, idx) => {
+    total += Number(it.price || 0);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const img = document.createElement('img');
+    img.src = it.img || 'https://via.placeholder.com/300x200?text=No+Image';
+
+    const details = document.createElement('div');
+    details.className = 'details';
+    details.innerHTML = `<div class="title">${it.name}</div>
+                         <div style="color:#bfb8ad">Quantity: 1</div>`;
+
+    const right = document.createElement('div');
+    right.innerHTML = `<div style="font-weight:800">₹${Number(it.price).toLocaleString('en-IN')}</div>`;
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove';
+    removeBtn.textContent = 'Remove';
+    removeBtn.onclick = ()=> {
+      let cart = readCart();
+      cart.splice(idx,1);
+      localStorage.setItem('cart', JSON.stringify(cart));
+      render();
+    };
+
+    card.appendChild(img);
+    card.appendChild(details);
+    card.appendChild(right);
+    card.appendChild(removeBtn);
+
+    root.appendChild(card);
+  });
+
+  document.getElementById('totalAmt').textContent = '₹' + total.toLocaleString('en-IN');
+}
+
+document.getElementById('checkoutBtn').addEventListener('click', ()=> {
+  // go to your existing checkout page
+  window.location.href = 'checkout.html';
+});
+
+// initial render
+render();
+</script>
+
+</body>
+</html>

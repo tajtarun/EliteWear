@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EliteWear — Shirts & Watches</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root{
+  --bg:#0b0b0c;
+  --card:#0f0f10;
+  --muted:#bfb8ad;
+  --gold:#d4af37;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  background:#0b0b0c;
+  color:#eee;
+}
+
+/* HEADER */
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:18px 28px;
+}
+nav a{
+  color:var(--gold);
+  margin-left:20px;
+  font-weight:600;
+  text-decoration:none;
+}
+nav a:hover{ color:#fff; }
+
+/* BRAND */
+.brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.brand img{
+  width:48px;
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.5);
+}
+
+/* HERO SLIDER */
+.hero{
+  width:90%;
+  max-width:1400px;
+  margin:20px auto 0;
+  height:360px;
+  border-radius:22px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 10px 40px rgba(0,0,0,0.7);
+}
+.hero img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  position:absolute;
+  opacity:0;
+  animation:fade 12s infinite;
+}
+.hero img:nth-child(1){ animation-delay:0s; }
+.hero img:nth-child(2){ animation-delay:4s; }
+.hero img:nth-child(3){ animation-delay:8s; }
+@keyframes fade{
+  0%{opacity:0;}
+  10%{opacity:1;}
+  30%{opacity:1;}
+  40%{opacity:0;}
+  100%{opacity:0;}
+}
+
+.hero-text{
+  position:absolute;
+  bottom:20px;
+  left:30px;
+  z-index:20;
+}
+.hero-text h2{
+  margin:0;font-size:34px;font-weight:800;
+}
+.hero-text p{margin:4px 0 0;font-size:16px;color:#d4d4d4;}
+
+/* PRODUCTS GRID */
+.products{
+  width:90%;
+  max-width:1300px;
+  margin:40px auto;
+  display:flex;
+  flex-wrap:wrap;
+  gap:30px;
+  justify-content:center;
+}
+
+/* card */
+.product-card{
+  background:#111;
+  padding:14px;
+  width:340px;
+  border-radius:16px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.6);
+  transition:transform .22s, box-shadow .22s;
+}
+.product-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 16px 50px rgba(0,0,0,0.85);
+}
+
+/* medium image box (220px) */
+.product-img-box{
+  width:100%;
+  height:220px; /* MEDIUM size requested */
+  background:#000;
+  border-radius:12px;
+  overflow:hidden;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+.product-img-box img{
+  width:100%;
+  height:100%;
+  object-fit:cover; /* crop neatly */
+  display:block;
+}
+
+/* meta row */
+.product-meta{
+  margin-top:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+.product-meta .title{
+  font-weight:700;
+  color:#fff;
+  font-size:15px;
+}
+.product-meta .price{
+  color:var(--gold);
+  font-weight:800;
+  margin-right:10px;
+}
+
+/* buy button */
+.buy-btn{
+  background:var(--gold);
+  border:none;
+  padding:6px 12px;
+  border-radius:8px;
+  font-weight:700;
+  cursor:pointer;
+  color:#000;
+}
+
+/* FOOTER CENTERED */
+footer{
+  text-align:center;
+  margin:50px 0;
+  font-size:14px;
+  color:#aaa;
+}
+
+/* -----------------------------
+   ADMIN LUXURY GOLD POPUP (B)
+   ----------------------------- */
+.modal-bg{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.65);
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+  backdrop-filter: blur(6px);
+}
+.modal{
+  width:92%;
+  max-width:420px;
+  background:#0f0f10;
+  border-radius:16px;
+  padding:22px;
+  border:1px solid rgba(212,175,55,0.25);
+  box-shadow:0 10px 40px rgba(0,0,0,0.6), 0 0 18px rgba(212,175,55,0.06) inset;
+  text-align:center;
+  transform-origin:center;
+  animation:modalPop .28s ease;
+}
+@keyframes modalPop{
+  from{opacity:0; transform:translateY(18px) scale(.98)}
+  to{opacity:1; transform:translateY(0) scale(1)}
+}
+
+.fingerprint{
+  width:64px;height:64px;margin:12px auto;border-radius:50%;
+  background:linear-gradient(180deg,#0b0b0b,#141414);
+  border:2px solid rgba(212,175,55,0.12);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 22px rgba(0,0,0,0.5);
+  cursor:pointer;
+}
+
+.input-pass{
+  width:100%;
+  padding:12px;
+  margin-top:12px;
+  border-radius:10px;
+  background:#111;
+  border:1px solid #262626;
+  color:#fff;
+}
+
+.modal .btn{
+  margin-top:12px;
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  font-weight:800;
+  cursor:pointer;
+}
+.btn-enter{
+  background:linear-gradient(90deg,var(--gold),#f3e0a8);
+  color:#000;
+}
+.btn-cancel{
+  background:#222;color:#fff;margin-top:8px;
+}
+
+/* error text */
+#adminError{ color:#ff6b6b; display:none; margin-top:10px; }
+
+/* error flash */
+@keyframes errorFlash{ 0%{box-shadow:0 0 0 red}50%{box-shadow:0 0 14px red}100%{box-shadow:0 0 0 red} }
+
+/* LOADING SCREEN (3D lock) */
+#loadingScreen{
+  display:none;
+  position:fixed; inset:0;
+  background:#0b0b0c;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  z-index:2000;
+}
+.loader-ring{
+  width:80px;height:80px;border-radius:50%;
+  border:6px solid #222;border-top:6px solid var(--gold);
+  animation:spin 1s linear infinite;margin-bottom:16px;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.lock-3d svg{ animation:lockSpin 1.3s linear infinite; }
+@keyframes lockSpin{ from{transform:rotateY(0)} to{transform:rotateY(360deg)} }
+#loadingText{ color:var(--gold); font-weight:700; margin-top:8px; font-size:18px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="elitewear-logo.jpg" alt="logo">
+    <div>
+      <h1>EliteWear</h1>
+      <div style="font-size:13px;color:#bbb">Shirts • Watches • Bespoke</div>
+    </div>
+  </div>
+
+  <nav>
+    <a href="contact.html">Contact</a>
+    <a href="consignment.html">Consignment</a>
+    <a id="adminBtn" style="cursor:pointer">Admin</a>
+    <a href="cart.html">🛒</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<div class="hero" role="banner">
+  <img src="suits.jpg" alt="">
+  <img src="shoes.jpg" alt="">
+  <img src="watch.jpg" alt="">
+  <div class="hero-text">
+    <h2>EliteWear Collection</h2>
+    <p>Curated luxury pieces — Signature selections & bespoke consignments</p>
+  </div>
+</div>
+
+<h3 style="width:90%;max-width:1400px;margin:32px auto 0;color:#fff;">Available Products</h3>
+
+<!-- products -->
+<div class="products" id="productsContainer"></div>
+
+<!-- footer -->
+<footer>
+  © EliteWear — Crafted with care.<br>
+  — MADE BY TARUN —
+</footer>
+
+<!-- ADMIN POPUP (Luxury gold) -->
+<div class="modal-bg" id="adminModal">
+  <div class="modal" id="adminBox">
+    <h3 style="color:var(--gold);margin:0 0 6px">Admin Access</h3>
+    <p style="color:#cfcfcf;margin:0 0 10px">Only admins can manage products</p>
+
+    <div class="fingerprint" id="fingerprintBtn" title="Enter admin">
+      <!-- small fingerprint icon -->
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 1v2"></path>
+        <path d="M7 4.5A7 7 0 0 1 17 4.5"></path>
+        <path d="M4 9a9 9 0 0 1 16 0"></path>
+        <path d="M12 7v2"></path>
+        <path d="M12 11v7"></path>
+      </svg>
+    </div>
+
+    <input id="adminPass" class="input-pass" type="password" placeholder="Enter admin password">
+    <button id="adminEnter" class="btn btn-enter">Enter</button>
+    <button id="adminClose" class="btn btn-cancel">Cancel</button>
+
+    <p id="adminError"></p>
+  </div>
+</div>
+
+<!-- LOADING 3D -->
+<div id="loadingScreen">
+  <div class="loader-ring" id="loaderRing"></div>
+  <div class="lock-3d" id="lock3d" style="display:none;margin-bottom:12px;">
+    <svg width="90" height="90" viewBox="0 0 24 24" fill="#d4af37" aria-hidden="true">
+      <path d="M4 10h16v10H4z"/>
+      <path d="M7 10V7a5 5 0 0 1 10 0v3" fill="#f3e0a8"/>
+    </svg>
+  </div>
+  <div id="loadingText">Verifying access...</div>
+</div>
+
+<script>
+/* initialize supabase client */
+const sb = window.supabase.createClient(
+  "https://eonwirzbhwcpfqiltyjp.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvbndpcnpiaHdjcGZxaWx0eWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTYwNjksImV4cCI6MjA3OTczMjA2OX0.kT-pqelZyTfiaoaKSbSqFLPW7xwbemZ2V4Y-WpyHN8Q"
+);
+
+/* ADMIN / AUTH LOGIC */
+const adminBtn = document.getElementById('adminBtn');
+const adminModal = document.getElementById('adminModal');
+const adminBox = document.getElementById('adminBox');
+const adminPass = document.getElementById('adminPass');
+const adminEnter = document.getElementById('adminEnter');
+const adminClose = document.getElementById('adminClose');
+const adminError = document.getElementById('adminError');
+const fingerprintBtn = document.getElementById('fingerprintBtn');
+
+const loadingScreen = document.getElementById('loadingScreen');
+const loaderRing = document.getElementById('loaderRing');
+const lock3d = document.getElementById('lock3d');
+const loadingText = document.getElementById('loadingText');
+
+const REAL_PASSWORD = "elitetarun2011"; // your password
+const MAX_ATTEMPTS = 3;
+let attemptsLeft = parseInt(localStorage.getItem('admin_attempts') || MAX_ATTEMPTS, 10);
+
+/* open popup */
+adminBtn.addEventListener('click', () => {
+  adminModal.style.display = 'flex';
+  adminError.style.display = 'none';
+  adminPass.value = '';
+  // if blocked
+  if (attemptsLeft <= 0) {
+    blockUser();
+  }
+});
+
+/* close */
+adminClose.addEventListener('click', () => adminModal.style.display = 'none');
+fingerprintBtn.addEventListener('click', () => adminPass.focus());
+
+/* check on Enter button */
+adminEnter.addEventListener('click', () => {
+  const val = (adminPass.value||'').trim();
+  if (!val) return;
+
+  if (attemptsLeft <= 0) { blockUser(); return; }
+
+  if (val === REAL_PASSWORD) {
+    // reset attempts
+    localStorage.setItem('admin_attempts', MAX_ATTEMPTS);
+    showLoadingAndRedirect();
+  } else {
+    attemptsLeft--;
+    localStorage.setItem('admin_attempts', attemptsLeft);
+    if (attemptsLeft <= 0) blockUser();
+    else showWrong(attemptsLeft);
+  }
+});
+
+/* visual wrong */
+function showWrong(left) {
+  adminError.textContent = `Wrong password — ${left} attempts left`;
+  adminError.style.display = 'block';
+  adminBox.style.animation = 'errorFlash 0.45s ease';
+  setTimeout(()=> adminBox.style.animation = '', 460);
+}
+
+/* block */
+function blockUser(){
+  adminError.textContent = "Access Blocked — Too Many Attempts";
+  adminError.style.display = 'block';
+  adminPass.disabled = true;
+  adminEnter.disabled = true;
+  adminBox.style.animation = 'errorFlash 0.7s ease';
+}
+
+/* success: show 3D lock animation then redirect */
+function showLoadingAndRedirect(){
+  adminModal.style.display = 'none';
+  loadingScreen.style.display = 'flex';
+  // show 3D lock (swap ring)
+  loaderRing.style.display = 'none';
+  lock3d.style.display = 'block';
+  loadingText.textContent = 'Welcome Admin…';
+  setTimeout(()=> {
+    // redirect to admin panel
+    window.location.href = 'adminpanel.html';
+  }, 1300);
+}
+
+/* -------------------------
+   LOAD PRODUCTS (image_url)
+   ------------------------- */
+async function loadProducts(){
+  try {
+    const { data, error } = await sb.from('products').select('*').order('id', { ascending: false });
+    const container = document.getElementById('productsContainer');
+
+    if (error) {
+      console.error('supabase error', error);
+      container.innerHTML = `<p style="color:#ccc">Failed to load products.</p>`;
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      container.innerHTML = `<p style="color:#ccc">No products yet.</p>`;
+      return;
+    }
+
+    // render
+    container.innerHTML = '';
+    data.forEach(p => {
+      // image url (we saved full public URL in image_url)
+      const img = p.image_url || '';
+
+      // sanitize simple quotes for onclick (basic)
+      const safeName = (p.product_name || '').replace(/'/g, "\\'");
+      const safeImg = (img || '').replace(/'/g, "\\'");
+
+      container.innerHTML += `
+        <div class="product-card">
+          <div class="product-img-box">
+            <img src="${safeImg}" alt="${safeName}">
+          </div>
+
+          <div class="product-meta">
+            <div class="title">${safeName}</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="price">₹${p.product_price}</div>
+              <button class="buy-btn" onclick="addToCart('${safeName}', '${p.product_price}', '${safeImg}')">Buy</button>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  } catch (err) {
+    console.error('loadProducts error', err);
+    const container = document.getElementById('productsContainer');
+    container.innerHTML = `<p style='color:#ccc'>Error loading products.</p>`;
+  }
+}
+
+/* add to cart */
+function addToCart(name, price, img){
+  let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  cart.push({ name, price, img });
+  localStorage.setItem('cart', JSON.stringify(cart));
+  alert('Added to cart!');
+}
+
+/* initial load */
+loadProducts();
+</script>
+
+</body>
+</html>
