@@ -83,12 +83,7 @@ button{cursor:pointer;font-family:'Poppins';}
 }
 
 .remove-row{
-  margin-top:10px;
-  background:#333;
-  padding:8px 12px;
-  border:none;
-  color:#eee;
-  border-radius:8px;
+  margin-top:10px;background:#333;padding:8px 12px;border:none;color:#eee;border-radius:8px;
 }
 
 .submit-btn{
@@ -130,8 +125,8 @@ button{cursor:pointer;font-family:'Poppins';}
 </div>
 
 <script>
-/* ✅ Correct backend URL for Render */
-const ENDPOINT = "https://elitewear-backend.onrender.com/upload-consignment";
+// 🔥 FIXED ENDPOINT (Render backend)
+const ENDPOINT = "https://elitewear-backend.onrender.com/submit-consignment";
 
 const openUploader = document.getElementById("openUploader");
 const popupBg = document.getElementById("popupBg");
@@ -236,9 +231,9 @@ submitAll.onclick = async () => {
   statusBox.innerHTML = "";
 
   const rows = Array.from(rowsContainer.children);
+  const fd = new FormData();
 
-  const images = [];
-  const items = [];
+  let anyImage = false;
 
   rows.forEach((row) => {
     const fileInput = row.querySelector("input[type='file']");
@@ -246,20 +241,18 @@ submitAll.onclick = async () => {
     const price = row.querySelector("input[placeholder='Price ₹']").value;
 
     if (fileInput.files.length > 0) {
-      images.push(fileInput.files[0]);
+      fd.append("files", fileInput.files[0]);
+      anyImage = true;
     }
 
-    items.push({ name, price });
+    fd.append("names[]", name);
+    fd.append("prices[]", price);
   });
 
-  if (images.length === 0) {
+  if (!anyImage) {
     statusBox.innerHTML = `<div class="status error">Please upload at least one item.</div>`;
     return;
   }
-
-  const fd = new FormData();
-  images.forEach(img => fd.append("images", img));
-  fd.append("items", JSON.stringify(items));
 
   statusBox.innerHTML = `<div class="status">Sending...</div>`;
 
@@ -272,7 +265,7 @@ submitAll.onclick = async () => {
     } else {
       statusBox.innerHTML = `<div class="status error">Server error.</div>`;
     }
-  } catch (err) {
+  } catch {
     statusBox.innerHTML = `<div class="status error">Network error.</div>`;
   }
 };
