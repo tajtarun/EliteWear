@@ -47,11 +47,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const productName = document.getElementById("product_name").value.trim();
     const productPrice = document.getElementById("product_price").value.trim();
     const productDesc = document.getElementById("product_description").value.trim();
+    const userName = document.getElementById("user_name").value.trim();   // ⭐ ADDED
     const userEmail = document.getElementById("user_email").value.trim();
     const userPhone = document.getElementById("user_phone").value.trim();
     const file = document.getElementById("product_image").files[0];
 
-    if (!productName || !productPrice || !productDesc || !file) {
+    // Validation
+    if (!productName || !productPrice || !productDesc || !userName || !userEmail || !file) {
       alert("Please fill all required fields and select an image.");
       showLoading(false);
       return;
@@ -81,6 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
           product_price: productPrice,
           description: productDesc,
           image_url: imageUrl,
+          user_name: userName,
           user_email: userEmail,
           phone: userPhone
         }
@@ -93,6 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
         product_name: productName,
         product_price: productPrice,
         product_description: productDesc,
+        user_name: userName,           // ⭐ ADDED
         user_email: userEmail,
         user_phone: userPhone,
         image_url: imageUrl,
