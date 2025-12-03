@@ -22,8 +22,6 @@ body{
 }
 h1{color:var(--gold);margin-bottom:12px}
 p{color:#ccc;line-height:1.6}
-
-/* FORM */
 input{
   width:100%;padding:12px;margin-top:10px;border:none;
   border-radius:8px;background:#171717;color:#eee;outline:none;
@@ -34,8 +32,6 @@ button{
   background:linear-gradient(90deg,var(--gold),#f3e0a8);
   color:#000;
 }
-
-/* HIDDEN THANK YOU SECTION */
 #thankSection{display:none;margin-top:20px}
 .progress-ring{
   height:8px;background:rgba(255,255,255,0.03);
@@ -51,10 +47,8 @@ button{
 <body>
 
 <div class="box">
-  
-  <!-- STEP 1 — FORM -->
   <h1>Almost Done!</h1>
-  <p>Please provide your phone number and Gmail address so we can contact you.</p>
+  <p>Please provide your phone number and Gmail address.</p>
 
   <div id="formSection">
     <input type="tel" id="phone" placeholder="Your Phone Number" required>
@@ -62,43 +56,53 @@ button{
     <button id="submitDetails">Submit</button>
   </div>
 
-  <!-- STEP 2 — THANK YOU + PROGRESS -->
   <div id="thankSection">
     <h1>Thank You!</h1>
     <p>Your details have been received. Our team will contact you shortly.</p>
 
     <div class="progress-ring"><i id="pr"></i></div>
-    <p style="font-size:13px;color:#bbb;margin-top:12px">You will be redirected in a moment...</p>
+    <p style="font-size:13px;color:#bbb;margin-top:12px">You will be redirected shortly...</p>
   </div>
-
 </div>
 
 <script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwLvIA0I59hogZ5jYOyF_RAjUctE7SAMbqUEb9eBqIul23ONbGjCRfVb5QwWpQlXQ-2/exec";
+
 const formSection = document.getElementById("formSection");
 const thankSection = document.getElementById("thankSection");
 const submitBtn = document.getElementById("submitDetails");
 const pr = document.getElementById("pr");
 
-submitBtn.onclick = () => {
+submitBtn.onclick = async () => {
   const phone = document.getElementById("phone").value.trim();
   const email = document.getElementById("email").value.trim();
 
-  if(!phone || !email){
-    alert("Please enter both your phone number and Gmail address.");
+  if (!phone || !email) {
+    alert("Please enter your phone number and Gmail.");
     return;
   }
 
-  // STEP 1 → STEP 2 transition
+  await fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      productName: "", 
+      productPrice: "",
+      userEmail: "",
+      image: "",
+      phone: phone,
+      buyerEmail: email
+    })
+  });
+
   formSection.style.display = "none";
   thankSection.style.display = "block";
 
-  // Animate progress bar
-  setTimeout(()=> pr.style.width="40%", 250);
+  setTimeout(()=> pr.style.width="40%", 300);
   setTimeout(()=> pr.style.width="85%", 900);
-  setTimeout(()=> pr.style.width="100%", 1600);
+  setTimeout(()=> pr.style.width="100%", 1500);
 
-  // Redirect
-  setTimeout(()=> location.href = "index.html", 5000);
+  setTimeout(()=> location.href = "index.html", 4000);
 };
 </script>
 
