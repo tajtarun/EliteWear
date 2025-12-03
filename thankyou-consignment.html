@@ -1,108 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
-<title>Thank You — Consignment Submitted</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thank You — Consignment</title>
+
+<!-- Google Font -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
+
 <style>
-:root{--bg:#0b0b0c;--card:#111;--gold:#d4af37;--muted:#bfb8ad}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  background:linear-gradient(180deg,var(--bg),#070707);
-  display:flex;justify-content:center;align-items:center;
-  margin:0;padding:20px;font-family:Poppins, sans-serif;color:#fff;
+body {
+  margin: 0;
+  background: #0b0b0c;
+  color: white;
+  font-family: 'Poppins', sans-serif;
+  text-align: center;
+  padding: 30px;
 }
-.box{
-  background:linear-gradient(180deg,#111,#0b0b0b);
-  padding:40px;border-radius:14px;text-align:center;
-  width:90%;max-width:420px;
-  box-shadow:0 20px 60px rgba(0,0,0,0.6);
+
+.container {
+  max-width: 420px;
+  margin: auto;
+  background: #111;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(255,255,255,0.05);
 }
-h1{color:var(--gold);margin-bottom:12px}
-p{color:#ccc;line-height:1.6}
-input{
-  width:100%;padding:12px;margin-top:10px;border:none;
-  border-radius:8px;background:#171717;color:#eee;outline:none;
+
+h1 {
+  color: #d4af37;
+  font-size: 26px;
+  margin-bottom: 10px;
 }
-button{
-  margin-top:14px;padding:12px;width:100%;border:none;
-  border-radius:10px;cursor:pointer;font-weight:700;
-  background:linear-gradient(90deg,var(--gold),#f3e0a8);
-  color:#000;
+
+p {
+  color: #d0d0d0;
+  font-size: 14px;
 }
-#thankSection{display:none;margin-top:20px}
-.progress-ring{
-  height:8px;background:rgba(255,255,255,0.03);
-  border-radius:999px;margin-top:18px;overflow:hidden;
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #222;
+  color: white;
+  font-size: 14px;
 }
-.progress-ring i{
-  display:block;height:100%;width:0%;
-  background:linear-gradient(90deg,var(--gold),#f3e0a8);
-  transition:width .9s cubic-bezier(.2,.9,.2,1);
+
+button {
+  margin-top: 18px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: #d4af37;
+  color: black;
+  font-weight: 700;
+  cursor: pointer;
+}
+button:hover {
+  opacity: 0.95;
 }
 </style>
 </head>
+
 <body>
 
-<div class="box">
-  <h1>Almost Done!</h1>
-  <p>Please provide your phone number and Gmail address.</p>
+<div class="container">
+  <h1>Your Product Was Sent ✓</h1>
+  <p>Enter your contact details so we can reach out quickly.</p>
 
-  <div id="formSection">
-    <input type="tel" id="phone" placeholder="Your Phone Number" required>
-    <input type="email" id="email" placeholder="Your Gmail Address" required>
-    <button id="submitDetails">Submit</button>
-  </div>
+  <input id="contact_name" type="text" placeholder="Your Name">
+  <input id="contact_email" type="email" placeholder="Your Gmail">
+  <input id="contact_phone" type="tel" placeholder="Your Phone Number">
 
-  <div id="thankSection">
-    <h1>Thank You!</h1>
-    <p>Your details have been received. Our team will contact you shortly.</p>
-
-    <div class="progress-ring"><i id="pr"></i></div>
-    <p style="font-size:13px;color:#bbb;margin-top:12px">You will be redirected shortly...</p>
-  </div>
+  <button id="submitDetails">Submit</button>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby9jbCsnEBq3gDFRnAhacJGf6bD2Wly_u8obFwUwFiQJPJgWSaQPNgnUHgef_bnIFtC/exec";
+emailjs.init("ZOt4YXfU6cDioZWJG"); // your public key
 
-const formSection = document.getElementById("formSection");
-const thankSection = document.getElementById("thankSection");
-const submitBtn = document.getElementById("submitDetails");
-const pr = document.getElementById("pr");
+document.getElementById("submitDetails").onclick = async () => {
 
-submitBtn.onclick = async () => {
-  const phone = document.getElementById("phone").value.trim();
-  const email = document.getElementById("email").value.trim();
+  const name = document.getElementById("contact_name").value.trim();
+  const email = document.getElementById("contact_email").value.trim();
+  const phone = document.getElementById("contact_phone").value.trim();
 
-  if (!phone || !email) {
-    alert("Please enter your phone number and Gmail.");
+  if (!name || !email || !phone) {
+    alert("Please fill all fields.");
     return;
   }
 
-  await fetch(SCRIPT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      productName: "", 
-      productPrice: "",
-      userEmail: "",
-      image: "",
-      phone: phone,
-      buyerEmail: email
-    })
-  });
+  try {
+    await emailjs.send("service_f8g34x6", "template_trg9yth", {
+      product_name: "User Contact Details",
+      product_price: "",
+      product_description: "",
+      user_email: email,
+      user_phone: phone,
+      user_name: name,
+      image_url: "",
+      year: new Date().getFullYear()
+    });
 
-  formSection.style.display = "none";
-  thankSection.style.display = "block";
+  } catch (err) {
+    console.error(err);
+  }
 
-  setTimeout(()=> pr.style.width="40%", 300);
-  setTimeout(()=> pr.style.width="85%", 900);
-  setTimeout(()=> pr.style.width="100%", 1500);
-
-  setTimeout(() => { location.href = "index.html"; }, 800);
+  // Redirect to home page
+  setTimeout(() => {
+    window.location.href = "index.html";
+  }, 1000);
 };
 </script>
 
