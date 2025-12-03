@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Consignment Upload</title>
 
+<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- EmailJS -->
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
 
 <style>
@@ -17,6 +20,7 @@ body {
     color: #fff;
 }
 
+/* MAIN WRAPPER */
 .container {
     width: 90%;
     max-width: 1000px;
@@ -25,6 +29,7 @@ body {
     gap: 30px;
 }
 
+/* LEFT IMAGE UPLOAD BOX */
 .upload-box {
     width: 45%;
     height: 350px;
@@ -51,6 +56,7 @@ body {
     border-radius: 18px;
 }
 
+/* PLUS ICON */
 .plus {
     font-size: 90px;
     color: gold;
@@ -63,6 +69,7 @@ body {
     to   { text-shadow: 0 0 25px gold; }
 }
 
+/* RIGHT SIDE FORM */
 .form-box {
     width: 55%;
     background: #111;
@@ -96,6 +103,7 @@ textarea {
     height: 120px;
 }
 
+/* SUBMIT BUTTON */
 .submit-btn {
     width: 100%;
     padding: 15px;
@@ -115,6 +123,7 @@ textarea {
     box-shadow: 0 0 25px gold;
 }
 
+/* LOADING */
 #loadingSpinner {
     display: none;
     margin-top: 15px;
@@ -127,6 +136,7 @@ textarea {
 
 <div class="container">
 
+    <!-- LEFT IMAGE UPLOAD -->
     <div class="upload-box" onclick="document.getElementById('product_image').click()">
         <span class="plus" id="plusIcon">+</span>
         <img id="previewImage" style="display:none;">
@@ -134,6 +144,7 @@ textarea {
 
     <input type="file" id="product_image" accept="image/*" hidden>
 
+    <!-- RIGHT FORM -->
     <form id="consignmentForm" class="form-box">
 
         <label>Product Name *</label>
@@ -145,6 +156,15 @@ textarea {
         <label>Product Description *</label>
         <textarea id="product_description" required></textarea>
 
+        <label>Your Name *</label>
+        <input type="text" id="user_name" required>
+
+        <label>Your Email *</label>
+        <input type="email" id="user_email" required>
+
+        <label>Your Phone *</label>
+        <input type="tel" id="user_phone" required>
+
         <button class="submit-btn" type="submit">Submit</button>
 
         <div id="loadingSpinner">Uploading... Please wait.</div>
@@ -153,7 +173,9 @@ textarea {
 </div>
 
 <script>
-// ⭐ IMAGE PREVIEW
+/* ----------------------------------------------------
+   IMAGE PREVIEW
+---------------------------------------------------- */
 const imgInput = document.getElementById("product_image");
 const preview = document.getElementById("previewImage");
 const plusIcon = document.getElementById("plusIcon");
@@ -167,14 +189,14 @@ imgInput.addEventListener("change", () => {
     }
 });
 
-// ⭐ EmailJS Init (YOUR KEY)
+/* ----------------------------------------------------
+   CONFIG
+---------------------------------------------------- */
 emailjs.init("ZOt4YXfU6cDioZWJG");
 
-// ⭐ IDs
 const EMAILJS_SERVICE_ID = "service_f8g34x6";
 const EMAILJS_TEMPLATE_ID = "template_trg9yth";
 
-// ⭐ Supabase Setup (YOUR KEYS)
 const SUPABASE_URL = "https://eonwirzbhwcpfqiltyjp.supabase.co";
 const SUPABASE_ANON_KEY =
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvbndpcnpiaHdjcGZxaWx0eWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTYwNjksImV4cCI6MjA3OTczMjA2OX0.kT-pqelZyTfiaoaKSbSqFLPW7xwbemZ2V4Y-WpyHN8Q";
@@ -182,13 +204,20 @@ const SUPABASE_ANON_KEY =
 const BUCKET = "product-images";
 const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ⭐ FORM SUBMIT
+/* ----------------------------------------------------
+   SUBMIT FORM
+---------------------------------------------------- */
 document.getElementById("consignmentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const productName = document.getElementById("product_name").value.trim();
     const productPrice = document.getElementById("product_price").value.trim();
     const productDesc = document.getElementById("product_description").value.trim();
+
+    const userName = document.getElementById("user_name").value.trim();
+    const userEmail = document.getElementById("user_email").value.trim();
+    const userPhone = document.getElementById("user_phone").value.trim();
+
     const file = document.getElementById("product_image").files[0];
 
     if (!file) {
@@ -199,31 +228,35 @@ document.getElementById("consignmentForm").addEventListener("submit", async (e) 
     document.getElementById("loadingSpinner").style.display = "block";
 
     try {
-        // 1️⃣ Upload Image
+        // 1️⃣ Upload Image to Supabase
         const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
         const uploadRes = await supabase.storage.from(BUCKET).upload(fileName, file);
         if (uploadRes.error) throw uploadRes.error;
 
-        // 2️⃣ Get Public URL
+        // 2️⃣ Public URL
         const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
         const imageUrl = pub.publicUrl;
 
-        // 3️⃣ Insert into DB
-        await supabase.from("products").insert([
-            {
-                product_name: productName,
-                product_price: productPrice,
-                description: productDesc,
-                image_url: imageUrl
-            }
-        ]);
+        // 3️⃣ Insert into Database
+        await supabase.from("products").insert([{
+            product_name: productName,
+            product_price: productPrice,
+            description: productDesc,
+            image_url: imageUrl,
+            user_name: userName,
+            user_email: userEmail,
+            user_phone: userPhone
+        }]);
 
-        // 4️⃣ Send Email
+        // 4️⃣ EmailJS SEND
         await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
             product_name: productName,
             product_price: productPrice,
             product_description: productDesc,
             image_url: imageUrl,
+            user_name: userName,
+            user_email: userEmail,
+            user_phone: userPhone,
             year: new Date().getFullYear()
         });
 
@@ -232,7 +265,7 @@ document.getElementById("consignmentForm").addEventListener("submit", async (e) 
 
     } catch (err) {
         console.error(err);
-        alert("Error. Please check console.");
+        alert("Error. Check console.");
     }
 
     document.getElementById("loadingSpinner").style.display = "none";
