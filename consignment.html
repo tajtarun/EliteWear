@@ -1,58 +1,279 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Consignment Submission</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consignment Submission</title>
 
-  <link rel="stylesheet" href="style.css">
+<!-- Supabase + EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
+
+<style>
+/* ---------------------------
+   GLOBAL STYLE
+----------------------------*/
+body {
+    margin: 0;
+    padding: 0;
+    background: #000000;
+    font-family: "Poppins", sans-serif;
+    color: #ffffff;
+}
+
+/* ---------------------------
+   MAIN CONTAINER
+----------------------------*/
+.container {
+    width: 90%;
+    max-width: 900px;
+    margin: 40px auto;
+    text-align: center;
+}
+
+.title {
+    font-size: 32px;
+    font-weight: 700;
+    color: gold;
+    text-shadow: 0 0 15px gold;
+    margin-bottom: 25px;
+    animation: fadeIn 1.2s ease-out;
+}
+
+/* ---------------------------
+   FORM CARD
+----------------------------*/
+.form-card {
+    background: #111;
+    padding: 30px;
+    border-radius: 20px;
+    border: 2px solid gold;
+    box-shadow: 0 0 35px rgba(255, 215, 0, 0.25);
+    animation: slideUp 1.2s ease-out;
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 18px;
+}
+
+label {
+    font-size: 15px;
+    font-weight: 600;
+    color: gold;
+}
+
+input,
+textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid gold;
+    background: #222;
+    outline: none;
+    color: #fff;
+    font-size: 15px;
+    transition: 0.3s;
+}
+
+input:focus,
+textarea:focus {
+    border-color: #ffea00;
+    box-shadow: 0 0 12px gold;
+}
+
+/* ---------------------------
+   BUTTONS
+----------------------------*/
+.gold-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(90deg, #b8860b, gold, #b8860b);
+    border: none;
+    border-radius: 15px;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    color: black;
+    text-transform: uppercase;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+.gold-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px gold;
+}
+
+.glow {
+    animation: glowPulse 1.5s infinite alternate;
+}
+
+/* ---------------------------
+   LOADING
+----------------------------*/
+#loadingSpinner {
+    display: none;
+    margin-top: 15px;
+    font-size: 16px;
+    color: gold;
+}
+
+/* ---------------------------
+   ANIMATIONS
+----------------------------*/
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glowPulse {
+    from { box-shadow: 0 0 10px gold; }
+    to { box-shadow: 0 0 25px gold; }
+}
+</style>
+
 </head>
 <body>
 
-  <h2>Submit Your Product for Consignment</h2>
+<div class="container">
 
-  <form id="consignmentForm">
-    
-    <!-- USER NAME -->
-    <label>Your Name *</label>
-    <input type="text" id="user_name" required placeholder="Enter your full name">
+    <h1 class="title">✨ Submit Your Product for Consignment ✨</h1>
 
-    <!-- USER EMAIL -->
-    <label>Your Email *</label>
-    <input type="email" id="user_email" required placeholder="Enter your email">
+    <form id="consignmentForm" class="form-card">
 
-    <!-- USER PHONE -->
-    <label>Your Phone *</label>
-    <input type="text" id="user_phone" required placeholder="Enter your phone number">
+        <div class="input-group">
+            <label>Your Name *</label>
+            <input type="text" id="user_name" required>
+        </div>
 
-    <!-- PRODUCT NAME -->
-    <label>Product Name *</label>
-    <input type="text" id="product_name" required>
+        <div class="input-group">
+            <label>Your Email *</label>
+            <input type="email" id="user_email" required>
+        </div>
 
-    <!-- PRODUCT PRICE -->
-    <label>Product Price *</label>
-    <input type="number" id="product_price" required>
+        <div class="input-group">
+            <label>Your Phone *</label>
+            <input type="text" id="user_phone" required>
+        </div>
 
-    <!-- PRODUCT DESCRIPTION -->
-    <label>Description *</label>
-    <textarea id="product_description" required></textarea>
+        <div class="input-group">
+            <label>Product Name *</label>
+            <input type="text" id="product_name" required>
+        </div>
 
-    <!-- PRODUCT IMAGE -->
-    <label>Upload Product Image *</label>
-    <input type="file" id="product_image" accept="image/*" required>
+        <div class="input-group">
+            <label>Product Price *</label>
+            <input type="number" id="product_price" required>
+        </div>
 
-    <button type="submit">Submit</button>
+        <div class="input-group">
+            <label>Description *</label>
+            <textarea id="product_description" required></textarea>
+        </div>
 
-    <!-- Loader -->
-    <div id="loadingSpinner" style="display:none; margin-top:10px;">
-        Uploading... please wait.
-    </div>
+        <div class="input-group">
+            <label>Upload Product Image *</label>
+            <input type="file" id="product_image" accept="image/*" required>
+        </div>
 
-  </form>
+        <button type="submit" class="gold-btn glow">Submit</button>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
-  <script src="script.js"></script>
+        <div id="loadingSpinner">Uploading... Please wait.</div>
+    </form>
+
+</div>
+
+<script>
+/* -------------------------
+   CONFIG
+-------------------------- */
+
+// EmailJS
+emailjs.init("ZOt4YXfU6cDioZWJG");
+
+const EMAILJS_SERVICE_ID = "service_f8g34x6";
+const EMAILJS_TEMPLATE_ID = "template_trg9yth";
+
+// Supabase
+const SUPABASE_URL = "https://eonwirzbhwcpfqiltyjp.supabase.co";
+const SUPABASE_ANON_KEY =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvbndpcnpiaHdjcGZxaWx0eWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTYwNjksImV4cCI6MjA3OTczMjA2OX0.kT-pqelZyTfiaoaKSbSqFLPW7xwbemZ2V4Y-WpyHN8Q";
+
+const BUCKET = "product-images";
+
+const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* -------------------------
+   SHOW LOADING
+-------------------------- */
+function showLoading(show = true) {
+    document.getElementById("loadingSpinner").style.display = show ? "block" : "none";
+}
+
+/* -------------------------
+   FORM SUBMISSION LOGIC
+-------------------------- */
+document.getElementById("consignmentForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    showLoading(true);
+
+    const userName = document.getElementById("user_name").value.trim();
+    const userEmail = document.getElementById("user_email").value.trim();
+    const userPhone = document.getElementById("user_phone").value.trim();
+    const productName = document.getElementById("product_name").value.trim();
+    const productPrice = document.getElementById("product_price").value.trim();
+    const productDesc = document.getElementById("product_description").value.trim();
+    const file = document.getElementById("product_image").files[0];
+
+    try {
+        // Upload image
+        const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
+
+        const uploadRes = await supabase.storage.from(BUCKET).upload(fileName, file);
+        if (uploadRes.error) throw uploadRes.error;
+
+        const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
+        const imageUrl = pub.publicUrl;
+
+        // Insert into DB
+        await supabase.from("products").insert([{
+            product_name: productName,
+            product_price: productPrice,
+            description: productDesc,
+            image_url: imageUrl,
+            user_email: userEmail,
+            phone: userPhone
+        }]);
+
+        // Send email
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+            product_name: productName,
+            product_price: productPrice,
+            product_description: productDesc,
+            user_email: userEmail,
+            user_phone: userPhone,
+            image_url: imageUrl,
+            user_name: userName,
+            year: new Date().getFullYear()
+        });
+
+        showLoading(false);
+        window.location.href = "thankyou-consignment.html";
+
+    } catch (err) {
+        console.error(err);
+        alert("Error! Check console.");
+        showLoading(false);
+    }
+});
+</script>
 
 </body>
 </html>
