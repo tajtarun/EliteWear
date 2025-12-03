@@ -1,166 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>EliteWear — Consignment</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-<style>
-:root { --bg:#0b0b0c; --card:#111; --gold:#d4af37; --muted:#bfb8ad; }
-*{box-sizing:border-box;}
-body{margin:0;background:#0b0b0c;font-family:'Poppins';color:#eee;}
-.container{text-align:center;margin-top:60px;}
-h1{color:var(--gold);} 
-.sell-btn{background:var(--gold);color:#111;padding:12px 20px;border:none;border-radius:10px;font-weight:700;cursor:pointer;}
-.popup-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);justify-content:center;align-items:center;z-index:10;}
-.popup{background:#111;padding:25px;border-radius:15px;width:90%;max-width:780px;box-shadow:0 0 20px rgba(0,0,0,.6);} 
-.row{display:flex;gap:20px;margin-bottom:18px;} 
-.left{width:180px;height:180px;border:2px dashed rgba(212,175,55,.4);border-radius:14px;display:flex;justify-content:center;align-items:center;cursor:pointer;position:relative;} 
-.left img{width:100%;height:100%;object-fit:cover;display:none;border-radius:14px;} 
-.plus{font-size:50px;color:var(--gold);} 
-input,button{font-family:'Poppins';} 
-.fields{flex:1;display:flex;flex-direction:column;gap:10px;} 
-.fields input{padding:12px;border-radius:10px;border:none;background:#222;color:#eee;} 
-.submit-btn{background:var(--gold);width:100%;padding:12px;border:none;border-radius:10px;font-weight:700;color:#111;margin-top:20px;} 
-.close-btn{background:#333;color:#eee;border:none;padding:10px;border-radius:10px;width:100%;margin-top:10px;} 
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consignment Submission</title>
+
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container">
-  <h1>Sell Your Luxury Item</h1>
-  <button class="sell-btn" id="openUploader">Start Uploading</button>
-</div>
+  <h2>Submit Your Product for Consignment</h2>
 
-<div class="popup-bg" id="popupBg">
-  <div class="popup">
-    <h1 style="color:var(--gold);margin-bottom:15px;">Upload Your Products</h1>
-    <div id="rowsContainer"></div>
+  <form id="consignmentForm">
+    
+    <!-- USER NAME -->
+    <label>Your Name *</label>
+    <input type="text" id="user_name" required placeholder="Enter your full name">
 
-    <button class="submit-btn" id="submitAll">Submit</button>
-    <button class="close-btn" id="closePopup">Close</button>
-  </div>
-</div>
+    <!-- USER EMAIL -->
+    <label>Your Email *</label>
+    <input type="email" id="user_email" required placeholder="Enter your email">
 
-<script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwLvIA0I59hogZ5jYOyF_RAjUctE7SAMbqUEb9eBqIul23ONbGjCRfVb5QwWpQlXQ-2/exec";
+    <!-- USER PHONE -->
+    <label>Your Phone *</label>
+    <input type="text" id="user_phone" required placeholder="Enter your phone number">
 
-const openUploader = document.getElementById("openUploader");
-const popupBg = document.getElementById("popupBg");
-const closePopup = document.getElementById("closePopup");
-const rowsContainer = document.getElementById("rowsContainer");
-const submitAll = document.getElementById("submitAll");
+    <!-- PRODUCT NAME -->
+    <label>Product Name *</label>
+    <input type="text" id="product_name" required>
 
-let rowCount = 0;
+    <!-- PRODUCT PRICE -->
+    <label>Product Price *</label>
+    <input type="number" id="product_price" required>
 
-function createRow() {
-  rowCount++;
+    <!-- PRODUCT DESCRIPTION -->
+    <label>Description *</label>
+    <textarea id="product_description" required></textarea>
 
-  const row = document.createElement("div");
-  row.className = "row";
+    <!-- PRODUCT IMAGE -->
+    <label>Upload Product Image *</label>
+    <input type="file" id="product_image" accept="image/*" required>
 
-  const left = document.createElement("div");
-  left.className = "left";
+    <button type="submit">Submit</button>
 
-  const plus = document.createElement("div");
-  plus.className = "plus";
-  plus.textContent = "+";
+    <!-- Loader -->
+    <div id="loadingSpinner" style="display:none; margin-top:10px;">
+        Uploading... please wait.
+    </div>
 
-  const img = document.createElement("img");
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*";
-  input.style.display = "none";
+  </form>
 
-  left.onclick = () => input.click();
-
-  input.onchange = () => {
-    const file = input.files[0];
-    if (file) {
-      img.src = URL.createObjectURL(file);
-      img.style.display = "block";
-      plus.style.display = "none";
-      left.style.border = "2px solid var(--gold)";
-      if (row === rowsContainer.lastElementChild) createRow();
-    }
-  };
-
-  left.appendChild(plus);
-  left.appendChild(img);
-  left.appendChild(input);
-
-  const fields = document.createElement("div");
-  fields.className = "fields";
-
-  const nameInput = document.createElement("input");
-  nameInput.placeholder = "Product Name";
-
-  const priceInput = document.createElement("input");
-  priceInput.placeholder = "Product Price ₹";
-  priceInput.type = "number";
-
-  const emailInput = document.createElement("input");
-  emailInput.placeholder = "Your Gmail";
-  emailInput.type = "email";
-
-  fields.appendChild(nameInput);
-  fields.appendChild(priceInput);
-  fields.appendChild(emailInput);
-
-  row.appendChild(left);
-  row.appendChild(fields);
-  rowsContainer.appendChild(row);
-}
-
-openUploader.onclick = () => {
-  popupBg.style.display = "flex";
-  rowsContainer.innerHTML = "";
-  rowCount = 0;
-  createRow();
-};
-
-closePopup.onclick = () => popupBg.style.display = "none";
-
-submitAll.onclick = async () => {
-  const rows = Array.from(rowsContainer.children);
-
-  for (const row of rows) {
-    const fileInput = row.querySelector("input[type='file']");
-    const name = row.querySelector("input[placeholder='Product Name']").value;
-    const price = row.querySelector("input[placeholder='Product Price ₹']").value;
-    const userEmail = row.querySelector("input[type='email']").value;
-
-    if (fileInput.files.length === 0) continue;
-
-    const file = fileInput.files[0];
-    const base64 = await toBase64(file);
-
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        productName: name,
-        productPrice: price,
-        userEmail: userEmail,
-        image: base64,
-        phone: "",
-        buyerEmail: ""
-      })
-    });
-  }
-
-  window.location.href = "thankyou-consignment.html";
-};
-
-function toBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-  });
-}
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
+  <script src="script.js"></script>
 
 </body>
 </html>
