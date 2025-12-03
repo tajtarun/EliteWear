@@ -5,31 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Consignment Upload</title>
 
-<!-- Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- EmailJS -->
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
 
 <style>
 body {
-    margin: 0;
-    padding: 0;
     background: #000;
-    font-family: "Poppins", sans-serif;
-    color: #fff;
+    margin: 0;
+    font-family: Poppins, sans-serif;
+    color: white;
 }
 
-/* MAIN WRAPPER */
 .container {
     width: 90%;
     max-width: 1000px;
-    margin: 50px auto;
+    margin: 40px auto;
     display: flex;
     gap: 30px;
 }
 
-/* LEFT IMAGE UPLOAD BOX */
+/* LEFT UPLOAD BOX */
 .upload-box {
     width: 45%;
     height: 350px;
@@ -40,235 +34,171 @@ body {
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    transition: 0.3s;
-    position: relative;
 }
 
-.upload-box:hover {
-    transform: scale(1.03);
-    box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
-}
-
-.upload-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 18px;
-}
-
-/* PLUS ICON */
 .plus {
     font-size: 90px;
     color: gold;
-    font-weight: 900;
     animation: glow 1.5s infinite alternate;
 }
 
 @keyframes glow {
     from { text-shadow: 0 0 10px gold; }
-    to   { text-shadow: 0 0 25px gold; }
+    to   { text-shadow: 0 0 30px gold; }
 }
 
-/* RIGHT SIDE FORM */
+#previewImg {
+    width: 100%;
+    height: 100%;
+    border-radius: 18px;
+    object-fit: cover;
+    display: none;
+}
+
+/* RIGHT FORM */
 .form-box {
     width: 55%;
     background: #111;
-    padding: 25px;
+    padding: 20px;
     border-radius: 18px;
     border: 2px solid gold;
-    box-shadow: 0 0 25px rgba(255, 215, 0, 0.25);
 }
 
 label {
     color: gold;
-    font-size: 15px;
     font-weight: 600;
-    margin-top: 12px;
+    margin-top: 10px;
     display: block;
 }
 
-input,
-textarea {
+input, textarea {
     width: 100%;
     padding: 12px;
-    font-size: 15px;
     background: #222;
     border: 1px solid gold;
     border-radius: 10px;
-    margin-top: 5px;
     color: white;
+    margin-top: 5px;
 }
 
 textarea {
-    height: 120px;
+    height: 100px;
 }
 
-/* SUBMIT BUTTON */
-.submit-btn {
+button {
     width: 100%;
-    padding: 15px;
-    border: none;
+    padding: 14px;
     margin-top: 20px;
-    background: linear-gradient(90deg, #b8860b, gold, #b8860b);
+    background: gold;
+    border: none;
+    border-radius: 12px;
     color: black;
-    font-size: 18px;
-    font-weight: bold;
-    border-radius: 15px;
+    font-weight: 700;
+    font-size: 17px;
     cursor: pointer;
-    transition: 0.3s;
 }
 
-.submit-btn:hover {
+button:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 25px gold;
 }
 
-/* LOADING */
-#loadingSpinner {
+#loading {
     display: none;
-    margin-top: 15px;
     color: gold;
+    margin-top: 10px;
 }
 </style>
-
 </head>
+
 <body>
+
+<script>
+emailjs.init("ZOt4YXfU6cDioZWJG"); // your public key
+</script>
 
 <div class="container">
 
-    <!-- LEFT IMAGE UPLOAD -->
-    <div class="upload-box" onclick="document.getElementById('product_image').click()">
+    <!-- LEFT UPLOAD -->
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
         <span class="plus" id="plusIcon">+</span>
-        <img id="previewImage" style="display:none;">
+        <img id="previewImg">
     </div>
 
-    <input type="file" id="product_image" accept="image/*" hidden>
+    <input type="file" id="fileInput" accept="image/*" hidden>
 
     <!-- RIGHT FORM -->
-    <form id="consignmentForm" class="form-box">
+    <form id="form" class="form-box">
 
         <label>Product Name *</label>
-        <input type="text" id="product_name" required>
+        <input type="text" id="pname" required>
 
         <label>Product Price *</label>
-        <input type="number" id="product_price" required>
+        <input type="number" id="pprice" required>
 
         <label>Product Description *</label>
-        <textarea id="product_description" required></textarea>
+        <textarea id="pdesc" required></textarea>
 
-        <label>Your Name *</label>
-        <input type="text" id="user_name" required>
+        <button type="submit">Submit Product</button>
 
-        <label>Your Email *</label>
-        <input type="email" id="user_email" required>
-
-        <label>Your Phone *</label>
-        <input type="tel" id="user_phone" required>
-
-        <button class="submit-btn" type="submit">Submit</button>
-
-        <div id="loadingSpinner">Uploading... Please wait.</div>
+        <div id="loading">Sending to Gmail...</div>
     </form>
 
 </div>
 
 <script>
-/* ----------------------------------------------------
-   IMAGE PREVIEW
----------------------------------------------------- */
-const imgInput = document.getElementById("product_image");
-const preview = document.getElementById("previewImage");
+const fileInput = document.getElementById("fileInput");
+const previewImg = document.getElementById("previewImg");
 const plusIcon = document.getElementById("plusIcon");
 
-imgInput.addEventListener("change", () => {
-    const file = imgInput.files[0];
+fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
     if (file) {
-        preview.src = URL.createObjectURL(file);
-        preview.style.display = "block";
+        previewImg.src = URL.createObjectURL(file);
+        previewImg.style.display = "block";
         plusIcon.style.display = "none";
     }
 });
 
-/* ----------------------------------------------------
-   CONFIG
----------------------------------------------------- */
-emailjs.init("ZOt4YXfU6cDioZWJG");
-
-const EMAILJS_SERVICE_ID = "service_f8g34x6";
-const EMAILJS_TEMPLATE_ID = "template_trg9yth";
-
-const SUPABASE_URL = "https://eonwirzbhwcpfqiltyjp.supabase.co";
-const SUPABASE_ANON_KEY =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvbndpcnpiaHdjcGZxaWx0eWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTYwNjksImV4cCI6MjA3OTczMjA2OX0.kT-pqelZyTfiaoaKSbSqFLPW7xwbemZ2V4Y-WpyHN8Q";
-
-const BUCKET = "product-images";
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/* ----------------------------------------------------
-   SUBMIT FORM
----------------------------------------------------- */
-document.getElementById("consignmentForm").addEventListener("submit", async (e) => {
+document.getElementById("form").addEventListener("submit", async (e) => {
     e.preventDefault();
+    document.getElementById("loading").style.display = "block";
 
-    const productName = document.getElementById("product_name").value.trim();
-    const productPrice = document.getElementById("product_price").value.trim();
-    const productDesc = document.getElementById("product_description").value.trim();
-
-    const userName = document.getElementById("user_name").value.trim();
-    const userEmail = document.getElementById("user_email").value.trim();
-    const userPhone = document.getElementById("user_phone").value.trim();
-
-    const file = document.getElementById("product_image").files[0];
+    const name = document.getElementById("pname").value;
+    const price = document.getElementById("pprice").value;
+    const desc = document.getElementById("pdesc").value;
+    const file = fileInput.files[0];
 
     if (!file) {
-        alert("Please upload an image.");
+        alert("Please upload your product image.");
+        document.getElementById("loading").style.display = "none";
         return;
     }
 
-    document.getElementById("loadingSpinner").style.display = "block";
+    // convert image to base64
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
 
-    try {
-        // 1️⃣ Upload Image to Supabase
-        const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
-        const uploadRes = await supabase.storage.from(BUCKET).upload(fileName, file);
-        if (uploadRes.error) throw uploadRes.error;
+    reader.onload = async () => {
+        const base64Image = reader.result;
 
-        // 2️⃣ Public URL
-        const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
-        const imageUrl = pub.publicUrl;
+        try {
+            await emailjs.send("service_f8g34x6", "template_trg9yth", {
+                product_name: name,
+                product_price: price,
+                product_description: desc,
+                attachment: base64Image,
+                year: new Date().getFullYear()
+            });
 
-        // 3️⃣ Insert into Database
-        await supabase.from("products").insert([{
-            product_name: productName,
-            product_price: productPrice,
-            description: productDesc,
-            image_url: imageUrl,
-            user_name: userName,
-            user_email: userEmail,
-            user_phone: userPhone
-        }]);
+            window.location.href = "thankyou-consignment.html";
+        } 
+        catch (error) {
+            console.error(error);
+            alert("Error sending email.");
+        }
 
-        // 4️⃣ EmailJS SEND
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-            product_name: productName,
-            product_price: productPrice,
-            product_description: productDesc,
-            image_url: imageUrl,
-            user_name: userName,
-            user_email: userEmail,
-            user_phone: userPhone,
-            year: new Date().getFullYear()
-        });
-
-        // 5️⃣ Redirect
-        location.href = "thankyou-consignment.html";
-
-    } catch (err) {
-        console.error(err);
-        alert("Error. Check console.");
-    }
-
-    document.getElementById("loadingSpinner").style.display = "none";
+        document.getElementById("loading").style.display = "none";
+    };
 });
 </script>
 
