@@ -26,7 +26,7 @@ body {
     gap: 25px;
 }
 
-/* LEFT BOX */
+/* LEFT IMAGE UPLOAD */
 .upload-box {
     width: 45%;
     height: 350px;
@@ -39,19 +39,23 @@ body {
     cursor: pointer;
     transition: .3s;
 }
+
 .upload-box:hover {
     transform: scale(1.04);
     box-shadow: 0 0 25px gold;
 }
+
 .plus {
     font-size: 80px;
     color: gold;
     animation: glow 1.3s infinite alternate;
 }
+
 @keyframes glow { 
   from { text-shadow: 0 0 10px gold; } 
   to { text-shadow: 0 0 25px gold; } 
 }
+
 #previewImage {
     width: 100%;
     height: 100%;
@@ -69,6 +73,7 @@ body {
     border: 2px solid gold;
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
+
 label {
     color: gold;
     font-size: 15px;
@@ -76,6 +81,7 @@ label {
     display: block;
     margin-top: 12px;
 }
+
 input, textarea {
     width: 100%;
     padding: 12px;
@@ -85,6 +91,7 @@ input, textarea {
     border-radius: 10px;
     margin-top: 5px;
 }
+
 textarea { height: 120px; }
 
 /* SUBMIT BUTTON */
@@ -101,6 +108,7 @@ textarea { height: 120px; }
     cursor: pointer;
     transition: .3s;
 }
+
 .submit-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 0 25px gold;
@@ -126,7 +134,7 @@ textarea { height: 120px; }
 
     <input type="file" id="product_image" accept="image/*" hidden>
 
-    <!-- RIGHT FORM -->
+    <!-- FORM -->
     <form id="consignmentForm" class="form-box">
         <label>Product Name *</label>
         <input type="text" id="product_name" required>
@@ -147,9 +155,9 @@ textarea { height: 120px; }
 
 <script>
 /* ------------------------------------------
-    CONFIG (Your Keys)
+    INIT CONFIG
 ------------------------------------------ */
-emailjs.init("ZOt4YXfU6cDioZWJG");
+emailjs.init("ZOt4YXfU6cDioZWJG"); // Your EmailJS PUBLIC KEY
 
 const EMAILJS_SERVICE_ID = "service_f8g34x6";
 const EMAILJS_TEMPLATE_ID = "template_trg9yth";
@@ -160,6 +168,7 @@ const SUPABASE_ANON_KEY =
 
 const BUCKET = "product-images";
 const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 
 /* ------------------------------------------
     IMAGE PREVIEW
@@ -173,8 +182,9 @@ document.getElementById("product_image").addEventListener("change", () => {
     }
 });
 
+
 /* ------------------------------------------
-    FORM SUBMISSION
+    SUBMIT FORM
 ------------------------------------------ */
 document.getElementById("consignmentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -192,26 +202,32 @@ document.getElementById("consignmentForm").addEventListener("submit", async (e) 
     loadingSpinner.style.display = "block";
 
     try {
-        /* 1. Upload image to Supabase */
+        /* 1) Upload Image to Supabase */
         const fileName = `${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
 
-        const uploadRes = await supabase.storage.from(BUCKET).upload(fileName, file);
+        const uploadRes = await supabase.storage
+            .from(BUCKET)
+            .upload(fileName, file);
+
         if (uploadRes.error) throw uploadRes.error;
 
-        /* 2. Get public URL */
-        const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
+        /* 2) Get public URL */
+        const { data: pub } = supabase.storage
+            .from(BUCKET)
+            .getPublicUrl(fileName);
+
         const imageUrl = pub.publicUrl;
 
-        /* 3. Send EmailJS with inline image */
+        /* 3) Send Email (image_url used in template) */
         await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
             product_name: productName,
             product_price: productPrice,
             product_description: productDesc,
-            attachment: imageUrl,  // THIS sends image to your Gmail
+            image_url: imageUrl,  // ✔ correct usage
             year: new Date().getFullYear()
         });
 
-        /* 4. Redirect */
+        /* 4) Redirect */
         window.location.href = "thankyou-consignment.html";
 
     } catch (err) {
