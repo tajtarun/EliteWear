@@ -66,7 +66,7 @@ button{
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwLvIA0I59hogZ5jYOyF_RAjUctE7SAMbqUEb9eBqIul23ONbGjCRfVb5QwWpQlXQ-2/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwlsXSzrlsLVC05yAe-QcEWOrh6mmp9BCCrfjWT2Q48QZkQopG1CLFg1LO2sr4Dn1bw/exec";
 
 const formSection = document.getElementById("formSection");
 const thankSection = document.getElementById("thankSection");
@@ -102,7 +102,7 @@ submitBtn.onclick = async () => {
   setTimeout(()=> pr.style.width="85%", 900);
   setTimeout(()=> pr.style.width="100%", 1500);
 
-  location.href = "index.html";
+  setTimeout(() => { location.href = "index.html"; }, 800);
 };
 </script>
 
