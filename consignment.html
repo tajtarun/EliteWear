@@ -1,107 +1,332 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consignment – EliteWear</title>
+<meta charset="UTF-8">
+<title>EliteWear — Consignment</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#0b0b0c; --card:#111; --gold:#d4af37; --gold-soft:#f1d675; --muted:#bfb8ad; }
+*{box-sizing:border-box;}
+body{margin:0;background:#0b0b0c;font-family:'Poppins';color:#eee;}
+.container{max-width:900px;margin:40px auto;background:#111;padding:30px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.6);}
+h1{color:var(--gold);margin:0 0 10px;}
+p{color:var(--muted);line-height:1.6;}
+button{cursor:pointer;font-family:'Poppins';}
 
-    <style>
-        body {
-            margin: 0;
-            font-family: "Poppins", sans-serif;
-            background: #0b0b0c;
-            color: white;
-        }
+.sell-btn{
+  background:var(--gold);
+  color:#111;
+  padding:12px 20px;
+  font-weight:700;
+  border:none;
+  border-radius:10px;
+  margin-top:20px;
+}
 
-        .container {
-            width: 90%;
-            max-width: 480px;
-            margin: auto;
-            margin-top: 50px;
-            padding: 20px;
-            background: #111;
-            border-radius: 20px;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.08);
-            animation: fadeIn 0.7s ease-out;
-        }
+.popup-bg{
+  display:none;
+  position:fixed;top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,0.65);
+  justify-content:center;
+  align-items:center;
+  z-index:1000;
+}
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+.popup{
+  width:95%;
+  max-width:1050px;
+  background:#111;
+  padding:20px;
+  border-radius:14px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.7);
+}
 
-        h2 {
-            text-align: center;
-            margin-bottom: 25px;
-            color: gold;
-            font-weight: 600;
-        }
+.row{
+  display:flex;
+  gap:18px;
+  background:#0e0e0e;
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:14px;
+}
 
-        input, textarea {
-            width: 100%;
-            padding: 12px;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            outline: none;
-            color: white;
-        }
+.left{
+  width:140px;height:140px;
+  border:2px dashed rgba(212,175,55,0.25);
+  border-radius:12px;
+  background:#0b0b0b;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+}
 
-        button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            background: gold;
-            color: black;
-            font-weight: bold;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
+.left img{width:100%;height:100%;object-fit:cover;display:none;}
+.plus{color:var(--gold);font-size:40px;font-weight:700;}
+.index-badge{
+  position:absolute;top:8px;left:8px;
+  background:rgba(0,0,0,0.5);
+  padding:4px 8px;
+  border-radius:8px;
+  color:var(--gold);
+  font-size:13px;
+}
 
-        button:hover {
-            background: #f5d76e;
-        }
+.fields{display:flex;gap:12px;}
+.fields input{
+  padding:10px;border:none;border-radius:8px;background:#222;color:#eee;flex:1;
+}
 
-        /* Loading Spinner */
-        #loadingSpinner {
-            display: none;
-            text-align: center;
-            margin-top: 15px;
-            font-size: 14px;
-            color: gold;
-        }
+.remove-row{
+  margin-top:10px;
+  background:#333;
+  padding:8px 12px;
+  border:none;
+  color:#eee;
+  border-radius:8px;
+}
 
-        .footer {
-            margin-top: 40px;
-            text-align: center;
-            color: #aaa;
-        }
-    </style>
+.submit-btn{
+  background:var(--gold);
+  color:#111;
+  padding:12px 20px;
+  border:none;
+  border-radius:10px;
+  font-weight:700;
+  margin-top:14px;
+}
+
+.status{margin-top:12px;padding:10px;border-radius:8px;}
+.status.success{background:rgba(212,175,55,0.1);color:var(--gold);} 
+.status.error{background:rgba(255,0,0,0.1);color:#ff6b6b;}
+</style>
 </head>
 
 <body>
 
-    <div class="container">
-        <h2>Sell Your Luxury Item</h2>
+<div class="container">
+  <h1>Sell Your Luxury Item</h1>
+  <p>Click the plus icon below to upload your product images. After uploading each item, a new upload box will automatically appear.</p>
+  <button class="sell-btn" id="openUploader">Start Uploading</button>
+</div>
 
-        <input type="text" id="pname" placeholder="Product Name">
-        <input type="text" id="pprice" placeholder="Price Tag">
-        <input type="file" id="pimage" accept="image/*">
-        <textarea id="pdesc" rows="3" placeholder="Short Description"></textarea>
+<div class="popup-bg" id="popupBg">
+  <div class="popup">
+    <h1 style="color:var(--gold);">Upload Items</h1>
+    <div id="rowsContainer"></div>
+    <button class="submit-btn" id="submitAll">Submit All</button>
+    <div id="statusBox"></div>
+    <button class="remove-row" id="closePopup">Close</button>
+  </div>
+</div>
 
-        <button onclick="submitConsignment()">Submit</button>
+<script>
+const ENDPOINT = "thankyou-consignment.html";
 
-        <div id="loadingSpinner">Uploading... Please wait</div>
-    </div>
+function createRow() {
+  rowCount++;
 
-    <div class="footer">
-        Made by Tarun © EliteWear
-    </div>
+  const row = document.createElement("div");
+  row.className = "row";
 
-    <script src="consignment.js"></script>
+  const left = document.createElement("div");
+  left.className = "left";
+
+  const plus = document.createElement("div");
+  plus.className = "plus";
+  plus.textContent = "+";
+
+  const badge = document.createElement("div");
+  badge.className = "index-badge";
+  badge.textContent = "Item " + rowCount;
+
+  const img = document.createElement("img");
+
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.style.display = "none";
+
+  left.appendChild(badge);
+  left.appendChild(plus);
+  left.appendChild(img);
+  left.appendChild(input);
+
+  left.onclick = () => input.click();
+
+  input.onchange = () => {
+    const file = input.files[0];
+    if (file) {
+      img.src = URL.createObjectURL(file);
+      img.style.display = "block";
+      plus.style.display = "none";
+      left.style.border = "2px solid var(--gold)";
+
+      if (row === rowsContainer.lastElementChild) createRow();
+    }
+  };
+
+  const fields = document.createElement("div");
+  fields.className = "fields";
+
+  const nameInput = document.createElement("input");
+  nameInput.placeholder = "Product Name";
+
+  const priceInput = document.createElement("input");
+  priceInput.placeholder = "Price ₹";
+  priceInput.type = "number";
+
+  fields.appendChild(nameInput);
+  fields.appendChild(priceInput);
+
+  const removeBtn = document.createElement("button");
+  removeBtn.className = "remove-row";
+  removeBtn.textContent = "Remove";
+  removeBtn.onclick = () => row.remove();
+
+  row.appendChild(left);
+  row.appendChild(fields);
+  row.appendChild(removeBtn);
+
+  rowsContainer.appendChild(row);
+}() {
+  rowCount++;
+
+  const row = document.createElement("div");
+  row.className = "row";
+
+  const left = document.createElement("div");
+  left.className = "left";
+
+  const plus = document.createElement("div");
+  plus.className = "plus";
+  plus.textContent = "+";
+
+  const badge = document.createElement("div");
+  badge.className = "index-badge";
+  badge.textContent = "Item " + rowCount;
+
+  const img = document.createElement("img");
+
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.style.display = "none";
+
+  left.appendChild(badge);
+  left.appendChild(plus);
+  left.appendChild(img);
+  left.appendChild(input);
+
+  left.onclick = () => input.click();
+
+  input.onchange = () => {
+    const file = input.files[0];
+    if (file) {
+      img.src = URL.createObjectURL(file);
+      img.style.display = "block";
+      plus.style.display = "none";
+      left.style.border = "2px solid var(--gold)";
+
+      if (row === rowsContainer.lastElementChild) {
+        createRow();
+      }
+    }
+  };
+
+  const fields = document.createElement("div");
+  fields.className = "fields";
+
+  const nameInput = document.createElement("input");
+  nameInput.placeholder = "Product Name";
+
+  const priceInput = document.createElement("input");
+  priceInput.placeholder = "Price ₹";
+  priceInput.type = "number";
+
+  fields.appendChild(nameInput);
+  fields.appendChild(priceInput);
+
+  const removeBtn = document.createElement("button");
+  removeBtn.className = "remove-row";
+  removeBtn.textContent = "Remove";
+  removeBtn.onclick = () => {
+    if (rowsContainer.children.length > 1) {
+      row.remove();
+    } else {
+      nameInput.value = "";
+      priceInput.value = "";
+      input.value = "";
+      img.style.display = "none";
+      plus.style.display = "block";
+      left.style.border = "2px dashed rgba(212,175,55,0.25)";
+    }
+  };
+
+  row.appendChild(left);
+  row.appendChild(fields);
+  row.appendChild(removeBtn);
+
+  rowsContainer.appendChild(row);
+}
+
+openUploader.onclick = () => {
+  popupBg.style.display = "flex";
+  rowsContainer.innerHTML = "";
+  rowCount = 0;
+  createRow();
+};
+
+closePopup.onclick = () => popupBg.style.display = "none";
+
+submitAll.onclick = async () => {
+  statusBox.innerHTML = "";
+
+  const rows = Array.from(rowsContainer.children);
+  const fd = new FormData();
+
+  let anyImage = false;
+
+  rows.forEach((row) => {
+    const fileInput = row.querySelector("input[type='file']");
+    const name = row.querySelector("input[placeholder='Product Name']").value;
+    const price = row.querySelector("input[placeholder='Price ₹']").value;
+
+    if (fileInput.files.length > 0) {
+      fd.append("files", fileInput.files[0]);
+      anyImage = true;
+    }
+
+    fd.append("names[]", name);
+    fd.append("prices[]", price);
+  });
+
+  if (!anyImage) {
+    statusBox.innerHTML = `<div class="status error">Please upload at least one item.</div>`;
+    return;
+  }
+
+  statusBox.innerHTML = `<div class="status">Sending...</div>`;
+
+  try {
+    const res = await fetch(ENDPOINT, { method: "POST", body: fd });
+    const data = await res.json();
+
+    if (data.success) {
+      window.location.href = "thankyou-consignment.html";
+    } else {
+      statusBox.innerHTML = `<div class="status error">Server error.</div>`;
+    }
+  } catch {
+    statusBox.innerHTML = `<div class="status error">Network error.</div>`;
+  }
+};
+</script>
+
 </body>
 </html>
