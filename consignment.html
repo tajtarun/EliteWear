@@ -109,53 +109,64 @@ button{cursor:pointer;font-family:'Poppins';}
 
 <body>
 
-<div class="container">
+<!-- MAIN START BUTTON -->
+<div class="container" style="text-align:center;">
   <h1>Sell Your Luxury Item</h1>
-  <p>Click the plus icon below to upload your product images. After uploading each item, a new upload box will automatically appear.</p>
   <button class="sell-btn" id="openUploader">Start Uploading</button>
 </div>
 
+<!-- POPUP PANEL -->
 <div class="popup-bg" id="popupBg">
-  <div class="popup">
-    <h1 style="color:var(--gold);">Upload Items</h1>
+  <div class="popup" style="max-width:750px;">
+
+    <h1 style="color:var(--gold);margin-bottom:15px;">Upload Your Products</h1>
+
     <div id="rowsContainer"></div>
-    <button class="submit-btn" id="submitAll">Submit All</button>
-    <div id="statusBox"></div>
-    <button class="remove-row" id="closePopup">Close</button>
+
+    <button class="submit-btn" id="submitAll" style="width:100%;">Submit</button>
+    <button class="remove-row" id="closePopup" style="width:100%;margin-top:10px;">Close</button>
   </div>
 </div>
 
 <script>
 const ENDPOINT = "thankyou-consignment.html";
+const openUploader = document.getElementById("openUploader");
+const popupBg = document.getElementById("popupBg");
+const closePopup = document.getElementById("closePopup");
+const rowsContainer = document.getElementById("rowsContainer");
+const submitAll = document.getElementById("submitAll");
 
+let rowCount = 0;
+
+/* ------------------------------ CREATE NEW ROW ------------------------------ */
 function createRow() {
   rowCount++;
 
   const row = document.createElement("div");
   row.className = "row";
+  row.style.display = "flex";
+  row.style.alignItems = "center";
 
+  /* LEFT: UPLOAD BOX */
   const left = document.createElement("div");
   left.className = "left";
+  left.style.width = "160px";
+  left.style.height = "160px";
+  left.style.borderRadius = "14px";
+  left.style.border = "2px dashed rgba(212,175,55,0.4)";
 
   const plus = document.createElement("div");
   plus.className = "plus";
   plus.textContent = "+";
-
-  const badge = document.createElement("div");
-  badge.className = "index-badge";
-  badge.textContent = "Item " + rowCount;
+  plus.style.fontSize = "50px";
 
   const img = document.createElement("img");
+  img.style.display = "none";
 
   const input = document.createElement("input");
   input.type = "file";
   input.accept = "image/*";
   input.style.display = "none";
-
-  left.appendChild(badge);
-  left.appendChild(plus);
-  left.appendChild(img);
-  left.appendChild(input);
 
   left.onclick = () => input.click();
 
@@ -171,110 +182,44 @@ function createRow() {
     }
   };
 
-  const fields = document.createElement("div");
-  fields.className = "fields";
-
-  const nameInput = document.createElement("input");
-  nameInput.placeholder = "Product Name";
-
-  const priceInput = document.createElement("input");
-  priceInput.placeholder = "Price ₹";
-  priceInput.type = "number";
-
-  fields.appendChild(nameInput);
-  fields.appendChild(priceInput);
-
-  const removeBtn = document.createElement("button");
-  removeBtn.className = "remove-row";
-  removeBtn.textContent = "Remove";
-  removeBtn.onclick = () => row.remove();
-
-  row.appendChild(left);
-  row.appendChild(fields);
-  row.appendChild(removeBtn);
-
-  rowsContainer.appendChild(row);
-}() {
-  rowCount++;
-
-  const row = document.createElement("div");
-  row.className = "row";
-
-  const left = document.createElement("div");
-  left.className = "left";
-
-  const plus = document.createElement("div");
-  plus.className = "plus";
-  plus.textContent = "+";
-
-  const badge = document.createElement("div");
-  badge.className = "index-badge";
-  badge.textContent = "Item " + rowCount;
-
-  const img = document.createElement("img");
-
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*";
-  input.style.display = "none";
-
-  left.appendChild(badge);
   left.appendChild(plus);
   left.appendChild(img);
   left.appendChild(input);
 
-  left.onclick = () => input.click();
-
-  input.onchange = () => {
-    const file = input.files[0];
-    if (file) {
-      img.src = URL.createObjectURL(file);
-      img.style.display = "block";
-      plus.style.display = "none";
-      left.style.border = "2px solid var(--gold)";
-
-      if (row === rowsContainer.lastElementChild) {
-        createRow();
-      }
-    }
-  };
-
-  const fields = document.createElement("div");
-  fields.className = "fields";
+  /* RIGHT: INPUT FIELDS */
+  const rightBox = document.createElement("div");
+  rightBox.style.flex = "1";
+  rightBox.style.display = "flex";
+  rightBox.style.flexDirection = "column";
+  rightBox.style.gap = "10px";
 
   const nameInput = document.createElement("input");
   nameInput.placeholder = "Product Name";
+  nameInput.style.padding = "12px";
+  nameInput.style.borderRadius = "10px";
+  nameInput.style.border = "none";
+  nameInput.style.background = "#222";
+  nameInput.style.color = "#eee";
 
   const priceInput = document.createElement("input");
-  priceInput.placeholder = "Price ₹";
+  priceInput.placeholder = "Product Price ₹";
   priceInput.type = "number";
+  priceInput.style.padding = "12px";
+  priceInput.style.borderRadius = "10px";
+  priceInput.style.border = "none";
+  priceInput.style.background = "#222";
+  priceInput.style.color = "#eee";
 
-  fields.appendChild(nameInput);
-  fields.appendChild(priceInput);
-
-  const removeBtn = document.createElement("button");
-  removeBtn.className = "remove-row";
-  removeBtn.textContent = "Remove";
-  removeBtn.onclick = () => {
-    if (rowsContainer.children.length > 1) {
-      row.remove();
-    } else {
-      nameInput.value = "";
-      priceInput.value = "";
-      input.value = "";
-      img.style.display = "none";
-      plus.style.display = "block";
-      left.style.border = "2px dashed rgba(212,175,55,0.25)";
-    }
-  };
+  rightBox.appendChild(nameInput);
+  rightBox.appendChild(priceInput);
 
   row.appendChild(left);
-  row.appendChild(fields);
-  row.appendChild(removeBtn);
+  row.appendChild(rightBox);
 
   rowsContainer.appendChild(row);
 }
 
+/* ------------------------------ OPEN POPUP ------------------------------ */
 openUploader.onclick = () => {
   popupBg.style.display = "flex";
   rowsContainer.innerHTML = "";
@@ -282,50 +227,14 @@ openUploader.onclick = () => {
   createRow();
 };
 
+/* ------------------------------ CLOSE POPUP ------------------------------ */
 closePopup.onclick = () => popupBg.style.display = "none";
 
-submitAll.onclick = async () => {
-  statusBox.innerHTML = "";
-
-  const rows = Array.from(rowsContainer.children);
-  const fd = new FormData();
-
-  let anyImage = false;
-
-  rows.forEach((row) => {
-    const fileInput = row.querySelector("input[type='file']");
-    const name = row.querySelector("input[placeholder='Product Name']").value;
-    const price = row.querySelector("input[placeholder='Price ₹']").value;
-
-    if (fileInput.files.length > 0) {
-      fd.append("files", fileInput.files[0]);
-      anyImage = true;
-    }
-
-    fd.append("names[]", name);
-    fd.append("prices[]", price);
-  });
-
-  if (!anyImage) {
-    statusBox.innerHTML = `<div class="status error">Please upload at least one item.</div>`;
-    return;
-  }
-
-  statusBox.innerHTML = `<div class="status">Sending...</div>`;
-
-  try {
-    const res = await fetch(ENDPOINT, { method: "POST", body: fd });
-    const data = await res.json();
-
-    if (data.success) {
-      window.location.href = "thankyou-consignment.html";
-    } else {
-      statusBox.innerHTML = `<div class="status error">Server error.</div>`;
-    }
-  } catch {
-    statusBox.innerHTML = `<div class="status error">Network error.</div>`;
-  }
+/* ------------------------------ SUBMIT ------------------------------ */
+submitAll.onclick = () => {
+  window.location.href = "thankyou-consignment.html";
 };
+
 </script>
 
 </body>
