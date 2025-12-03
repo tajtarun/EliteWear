@@ -1,243 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consignment Upload</title>
-
-<!-- Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- EmailJS -->
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
-
-<style>
-body {
-    margin: 0;
-    background: black;
-    font-family: Poppins, sans-serif;
-    color: white;
-}
-
-.container {
-    margin: 45px auto;
-    max-width: 1000px;
-    display: flex;
-    gap: 25px;
-}
-
-/* LEFT IMAGE UPLOAD */
-.upload-box {
-    width: 45%;
-    height: 350px;
-    background: #111;
-    border: 3px dashed gold;
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: .3s;
-}
-
-.upload-box:hover {
-    transform: scale(1.04);
-    box-shadow: 0 0 25px gold;
-}
-
-.plus {
-    font-size: 80px;
-    color: gold;
-    animation: glow 1.3s infinite alternate;
-}
-
-@keyframes glow { 
-  from { text-shadow: 0 0 10px gold; } 
-  to { text-shadow: 0 0 25px gold; } 
-}
-
-#previewImage {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 15px;
-    display: none;
-}
-
-/* RIGHT FORM */
-.form-box {
-    width: 55%;
-    background: #111;
-    padding: 25px;
-    border-radius: 15px;
-    border: 2px solid gold;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-}
-
-label {
-    color: gold;
-    font-size: 15px;
-    font-weight: 600;
-    display: block;
-    margin-top: 12px;
-}
-
-input, textarea {
-    width: 100%;
-    padding: 12px;
-    background: #222;
-    color: white;
-    border: 1px solid gold;
-    border-radius: 10px;
-    margin-top: 5px;
-}
-
-textarea { height: 120px; }
-
-/* SUBMIT BUTTON */
-.submit-btn {
-    width: 100%;
-    padding: 15px;
-    margin-top: 18px;
-    background: linear-gradient(to right, #b8860b, gold);
-    border: none;
-    border-radius: 12px;
-    font-size: 18px;
-    font-weight: bold;
-    color: black;
-    cursor: pointer;
-    transition: .3s;
-}
-
-.submit-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 25px gold;
-}
-
-#loadingSpinner {
-    display: none;
-    color: gold;
-    margin-top: 10px;
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consignment Upload — EliteWear</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #fff;
+      font-family: Poppins, sans-serif;
+    }
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: #111;
+      padding: 25px;
+      border: 2px solid gold;
+      border-radius: 12px;
+    }
+    h2 {
+      text-align: center;
+      color: gold;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      color: gold;
+      margin-top: 15px;
+      font-weight: 600;
+    }
+    input[type="text"], input[type="number"], input[type="email"], textarea {
+      width: 100%;
+      padding: 12px;
+      background: #222;
+      border: 1px solid gold;
+      border-radius: 8px;
+      color: white;
+      margin-top: 5px;
+    }
+    input[type="file"] {
+      margin-top: 10px;
+      color: #fff;
+    }
+    textarea {
+      resize: vertical;
+      height: 120px;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: gold;
+      border: none;
+      border-radius: 10px;
+      color: black;
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="container">
+  <div class="container">
+    <h2>Submit Your Product for Consignment</h2>
+    <form action="https://formspree.io/f/xjknrdzp" method="POST" enctype="multipart/form-data">
 
-    <!-- IMAGE UPLOAD -->
-    <div class="upload-box" onclick="document.getElementById('product_image').click()">
-        <span class="plus" id="plusIcon">+</span>
-        <img id="previewImage">
-    </div>
+      <label>Product Name *</label>
+      <input type="text" name="product_name" required>
 
-    <input type="file" id="product_image" accept="image/*" hidden>
+      <label>Product Price *</label>
+      <input type="number" name="product_price" required>
 
-    <!-- FORM -->
-    <form id="consignmentForm" class="form-box">
-        <label>Product Name *</label>
-        <input type="text" id="product_name" required>
+      <label>Description *</label>
+      <textarea name="product_description" required></textarea>
 
-        <label>Product Price *</label>
-        <input type="number" id="product_price" required>
+      <label>Product Image *</label>
+      <input type="file" name="attachment" accept="image/*" required>
 
-        <label>Description *</label>
-        <textarea id="product_description" required></textarea>
+      <label>Your Email *</label>
+      <input type="email" name="sender_email" required>
 
-        <button class="submit-btn" type="submit">Submit Consignment</button>
+      <button type="submit">Submit Consignment</button>
 
-        <div id="loadingSpinner">Uploading… Please wait...</div>
     </form>
-
-</div>
-
-
-<script>
-/* ------------------------------------------
-    INIT CONFIG
------------------------------------------- */
-emailjs.init("ZOt4YXfU6cDioZWJG"); // Your EmailJS PUBLIC KEY
-
-const EMAILJS_SERVICE_ID = "service_f8g34x6";
-const EMAILJS_TEMPLATE_ID = "template_trg9yth";
-
-const SUPABASE_URL = "https://eonwirzbhwcpfqiltyjp.supabase.co";
-const SUPABASE_ANON_KEY =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvbndpcnpiaHdjcGZxaWx0eWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTYwNjksImV4cCI6MjA3OTczMjA2OX0.kT-pqelZyTfiaoaKSbSqFLPW7xwbemZ2V4Y-WpyHN8Q";
-
-const BUCKET = "product-images";
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-
-/* ------------------------------------------
-    IMAGE PREVIEW
------------------------------------------- */
-document.getElementById("product_image").addEventListener("change", () => {
-    const file = product_image.files[0];
-    if (file) {
-        previewImage.src = URL.createObjectURL(file);
-        previewImage.style.display = "block";
-        plusIcon.style.display = "none";
-    }
-});
-
-
-/* ------------------------------------------
-    SUBMIT FORM
------------------------------------------- */
-document.getElementById("consignmentForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const productName = product_name.value.trim();
-    const productPrice = product_price.value.trim();
-    const productDesc = product_description.value.trim();
-    const file = product_image.files[0];
-
-    if (!file) {
-        alert("Please upload your product image.");
-        return;
-    }
-
-    loadingSpinner.style.display = "block";
-
-    try {
-        /* 1) Upload Image to Supabase */
-        const fileName = `${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
-
-        const uploadRes = await supabase.storage
-            .from(BUCKET)
-            .upload(fileName, file);
-
-        if (uploadRes.error) throw uploadRes.error;
-
-        /* 2) Get public URL */
-        const { data: pub } = supabase.storage
-            .from(BUCKET)
-            .getPublicUrl(fileName);
-
-        const imageUrl = pub.publicUrl;
-
-        /* 3) Send Email (image_url used in template) */
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-            product_name: productName,
-            product_price: productPrice,
-            product_description: productDesc,
-            image_url: imageUrl,  // ✔ correct usage
-            year: new Date().getFullYear()
-        });
-
-        /* 4) Redirect */
-        window.location.href = "thankyou-consignment.html";
-
-    } catch (err) {
-        console.error(err);
-        alert("Error occurred — check console.");
-    }
-
-    loadingSpinner.style.display = "none";
-});
-</script>
+  </div>
 
 </body>
 </html>
