@@ -62,15 +62,8 @@ document.getElementById("consignmentForm").addEventListener("submit", async (e) 
             attachment: imageUrl
         });
 
-        /** 4. Reset for next product */
-        alert("Consignment Sent Successfully!");
-
-        product_name.value = "";
-        product_price.value = "";
-        product_image.value = "";
-
-        previewImage.style.display = "none";
-        plusIcon.style.display = "block";
+        /** 4. Redirect to thank-you page */
+        window.location.href = "thankyou-consignment.html";
 
     } catch (err) {
         console.error(err);
