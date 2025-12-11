@@ -1,147 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Thank You — EliteWear Consignment</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thank you</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
 <style>
-body {
-    margin: 0;
-    padding: 0;
-    background: #000;
-    font-family: 'Poppins', sans-serif;
-    color: #fff;
-    text-align: center;
-}
-
-.container {
-    max-width: 450px;
-    margin: 60px auto;
-    background: #111;
-    padding: 30px;
-    border-radius: 18px;
-    border: 2px solid gold;
-    box-shadow: 0 0 25px rgba(255,215,0,0.25);
-    animation: fadeIn 0.8s ease-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.9); }
-    to   { opacity: 1; transform: scale(1); }
-}
-
-/* SUCCESS ICON */
-.success-icon {
-    font-size: 70px;
-    color: gold;
-    animation: glow 1.5s infinite alternate;
-    margin-bottom: 10px;
-}
-
-@keyframes glow {
-    from { text-shadow: 0 0 12px gold; }
-    to   { text-shadow: 0 0 25px gold; }
-}
-
-h1 {
-    color: gold;
-    font-size: 26px;
-    margin-bottom: 10px;
-}
-
-p {
-    color: #ccc;
-    font-size: 14px;
-}
-
-/* INPUTS */
-input {
-    width: 100%;
-    padding: 14px;
-    background: #222;
-    border: 1px solid gold;
-    border-radius: 10px;
-    margin-top: 12px;
-    color: white;
-    font-size: 14px;
-}
-
-/* BUTTON */
-button {
-    width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 12px;
-    background: linear-gradient(90deg, #b8860b, gold, #b8860b);
-    color: black;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 18px;
-    transition: 0.3s;
-    font-size: 16px;
-}
-
-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 20px gold;
-}
+  body{background:#070707;color:#fff;font-family:Poppins,Arial;text-align:center;padding:80px}
+  .card{max-width:420px;margin:0 auto;padding:28px;background:#0f0f0f;border-radius:12px;border:2px solid rgba(212,175,55,0.15)}
+  h1{color:#d4af37;margin:0 0 12px}
+  p{color:#ddd}
+  a{display:inline-block;margin-top:16px;padding:10px 16px;border-radius:10px;background:#d4af37;color:#000;text-decoration:none;font-weight:700}
 </style>
 </head>
-
 <body>
-
-<div class="container">
-    <div class="success-icon">✔</div>
-    <h1>Consignment Submitted!</h1>
-    <p>Please enter your contact details so our EliteWear team can reach you shortly.</p>
-
-    <input id="contact_name" type="text" placeholder="Your Name">
-    <input id="contact_email" type="email" placeholder="Your Gmail">
-    <input id="contact_phone" type="tel" placeholder="Your Phone Number">
-
-    <button id="submitDetails">Submit</button>
-</div>
-
-<script>
-emailjs.init("ZOt4YXfU6cDioZWJG"); // your public key
-
-document.getElementById("submitDetails").onclick = async () => {
-    const name = document.getElementById("contact_name").value.trim();
-    const email = document.getElementById("contact_email").value.trim();
-    const phone = document.getElementById("contact_phone").value.trim();
-
-    if (!name || !email || !phone) {
-        alert("Please fill all fields.");
-        return;
-    }
-
-    try {
-        await emailjs.send("service_f8g34x6", "template_trg9yth", {
-            product_name: "User Contact Details",
-            product_price: "",
-            product_description: "",
-            user_email: email,
-            user_phone: phone,
-            user_name: name,
-            image_url: "",
-            year: new Date().getFullYear()
-        });
-
-        alert("Details submitted successfully!");
-    } catch (err) {
-        console.error(err);
-        alert("Unable to send. Please check console.");
-    }
-
-    setTimeout(() => {
-        window.location.href = "index.html";
-    }, 1000);
-};
-</script>
-
+  <div class="card">
+    <h1>Thanks — Submitted</h1>
+    <p>Your consignment has been submitted successfully. We'll contact you soon.</p>
+    <a href="consignment.html">Submit another</a>
+  </div>
 </body>
 </html>
