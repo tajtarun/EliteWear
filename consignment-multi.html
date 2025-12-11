@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Consignment — multi product uploader</title>
+
+<!-- Supabase client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
+
+<style>
+  :root{
+    --bg:#050505; --card:#0f0f0f; --accent: #d4af37; --muted:#bdbdbd;
+  }
+  body{
+    margin:0; min-height:100vh; font-family:Inter, system-ui, Arial;
+    background:var(--bg); color: #fff; display:flex; align-items:flex-start; justify-content:center;
+    padding:40px 20px;
+  }
+
+  .page {
+    width:100%; max-width:1100px;
+  }
+
+  header {text-align:center; margin-bottom:18px;}
+  h1{color:var(--accent); margin:0 0 6px; font-size:24px;}
+  p.lead {color:var(--muted); margin:0 0 18px;}
+
+  #products { display:flex; flex-direction:column; gap:18px; }
+
+  .product-row{
+    display:flex; gap:18px; background:var(--card); padding:18px; border-radius:12px; border:1px solid rgba(212,175,55,0.08);
+    align-items:center;
+  }
+
+  /* left upload */
+  .upload {
+    flex:0 0 360px; height:220px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(180deg,#070707,#0e0e0e); border:2px dashed rgba(212,175,55,0.6); position:relative; cursor:pointer;
+    overflow:hidden;
+  }
+  .upload .plus { font-size:68px; color:var(--accent); text-shadow:0 0 10px rgba(212,175,55,0.2); }
+  .upload img { width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* right fields */
+  .fields { flex:1; display:flex; flex-direction:column; gap:10px; }
+  label{ font-size:13px; color:var(--accent); font-weight:600; }
+  input[type="text"], input[type="number"]{
+    width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(212,175,55,0.18);
+    background:#111; color:#fff; outline:none;
+  }
+
+  .row { display:flex; gap:12px; }
+  .row > * { flex:1; }
+
+  .controls { display:flex; gap:12px; margin-top:10px; align-items:center; }
+  .btn {
+    background:linear-gradient(90deg,#b8860b,#ffd54a); color:#000; padding:12px 18px; border-radius:10px; font-weight:700; border:none; cursor:pointer;
+  }
+  .btn.ghost { background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.06); }
+
+  footer { margin-top:18px; display:flex; gap:12px; align-items:center; justify-content:flex-end; }
+  .note { color:var(--muted); font-size:13px; margin-right:auto; }
+
+  /* responsive */
+  @media (max-width:880px){
+    .product-row{ flex-direction:column; }
+    .upload{ width:100%; height:260px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Submit Products for Consignment</h1>
+      <p class="lead">Click the “+” area to upload image. Add unlimited product blocks and click Submit to send one email with all products (image thumbnails link to the uploaded image).</p>
+    </header>
+
+    <div id="products"></div>
+
+    <div style="display:flex; gap:12px; margin-top:18px;">
+      <button id="addProductBtn" class="btn">+ Add product</button>
+      <button id="clearAllBtn" class="btn ghost">Clear all</button>
+    </div>
+
+    <footer>
+      <div class="note">Make sure this page is served via HTTPS (GitHub Pages) so EmailJS works reliably.</div>
+      <button id="submitAllBtn" class="btn">Submit All</button>
+    </footer>
+  </div>
+
+<script>
+/* =========================
+   CONFIG — change only here
+   ========================= */
+emailjs.init("ZOt4YXfU6cDioZWJG");            // your EmailJS public key
+const EMAILJS_SERVICE_ID = "service_f8g34x6";
+const EMAILJS_TEMPLATE_ID = "template_trg9yth"; // your template must use {{html}} variable
+
+const SUPABASE_URL = "https://eonwirzbhwcpfqiltyjp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvbndpcnpiaHdjcGZxaWx0eWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTYwNjksImV4cCI6MjA3OTczMjA2OX0.kT-pqelZyTfiaoaKSbSqFLPW7xwbemZ2V4Y-WpyHN8Q";
+const BUCKET = "product-images"; // make sure this bucket exists in your Supabase storage
+
+const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* =========================
+   UI + logic
+   ========================= */
+
+const productsEl = document.getElementById('products');
+const addProductBtn = document.getElementById('addProductBtn');
+const submitAllBtn = document.getElementById('submitAllBtn');
+const clearAllBtn = document.getElementById('clearAllBtn');
+
+let idCounter = 0;
+function createProductBlock(initialData = {}) {
+  idCounter++;
+  const id = `p${idCounter}`;
+
+  const row = document.createElement('div');
+  row.className = 'product-row';
+  row.dataset.id = id;
+
+  // LEFT: upload box
+  const upload = document.createElement('div');
+  upload.className = 'upload';
+  upload.title = 'Click to upload image';
+  upload.innerHTML = `<span class="plus">+</span>`;
+  row.appendChild(upload);
+
+  // hidden file input
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.style.display = 'none';
+
+  // RIGHT: fields
+  const fields = document.createElement('div');
+  fields.className = 'fields';
+  fields.innerHTML = `
+    <div><label>Product Name *</label><input type="text" class="product-name" placeholder="eg. Blue Shirt" /></div>
+    <div class="row">
+      <div><label>Product Price *</label><input type="number" class="product-price" placeholder="e.g. 599" /></div>
+      <div><label>User Email *</label><input type="text" class="user-email" placeholder="your email (for replies)" /></div>
+    </div>
+    <div class="controls">
+      <button type="button" class="btn ghost remove-btn">Remove</button>
+      <div style="flex:1"></div>
+      <small class="small-muted" style="color:var(--muted)">Image not uploaded</small>
+    </div>
+  `;
+
+  row.appendChild(fields);
+  row.appendChild(fileInput);
+
+  // events
+  upload.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files[0];
+    if (!f) return;
+    // show preview
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(f);
+    upload.innerHTML = '';
+    upload.appendChild(img);
+    // mark status text
+    const status = fields.querySelector('.controls small');
+    status.textContent = 'Image selected (will be uploaded on submit)';
+  });
+
+  // remove block
+  fields.querySelector('.remove-btn').addEventListener('click', () => {
+    productsEl.removeChild(row);
+  });
+
+  // prefill if provided
+  if (initialData.name) fields.querySelector('.product-name').value = initialData.name;
+  if (initialData.price) fields.querySelector('.product-price').value = initialData.price;
+  if (initialData.user_email) fields.querySelector('.user-email').value = initialData.user_email;
+
+  productsEl.appendChild(row);
+  return row;
+}
+
+// initial first product
+createProductBlock();
+
+addProductBtn.addEventListener('click', () => createProductBlock());
+
+clearAllBtn.addEventListener('click', () => {
+  productsEl.innerHTML = '';
+  createProductBlock();
+});
+
+/* =========================
+   SUBMIT: upload images and send one email
+   ========================= */
+
+async function uploadFileToSupabase(file){
+  // generate unique name
+  const name = `${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
+  const { data, error } = await supabase.storage.from(BUCKET).upload(name, file);
+  if (error) throw error;
+  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(name);
+  return urlData.publicUrl;
+}
+
+submitAllBtn.addEventListener('click', async () => {
+  // gather blocks
+  const rows = Array.from(productsEl.querySelectorAll('.product-row'));
+  if (!rows.length) { alert('Add at least one product.'); return; }
+
+  // validate entries & collect files
+  const items = [];
+  for (const r of rows){
+    const name = r.querySelector('.product-name').value.trim();
+    const price = r.querySelector('.product-price').value.trim();
+    const user_email = r.querySelector('.user-email').value.trim();
+    const fileInput = r.querySelector('input[type="file"]');
+    const file = fileInput && fileInput.files && fileInput.files[0];
+    if (!name || !price || !user_email) {
+      alert('Please fill product name, price and your email in every product block.');
+      return;
+    }
+    if (!file) {
+      alert('Please select an image for each product (click the plus).');
+      return;
+    }
+    items.push({name, price, user_email, file});
+  }
+
+  // disable UI
+  submitAllBtn.disabled = true;
+  submitAllBtn.textContent = 'Uploading...';
+  addProductBtn.disabled = true;
+
+  try {
+    // 1) upload files in parallel
+    const uploads = await Promise.all(items.map(it => uploadFileToSupabase(it.file)));
+    // attach returned url
+    const itemsWithUrls = items.map((it, i) => ({...it, image_url: uploads[i]}));
+
+    // 2) build HTML body (we will send this as template variable "html")
+    let html = `
+      <div style="font-family:Arial,Helvetica,sans-serif; color:#111; background:#fff; padding:18px;">
+        <h2 style="color:#d4af37; text-align:center;">✨ New Consignment Submission ✨</h2>
+    `;
+    itemsWithUrls.forEach((it, idx) => {
+      html += `
+        <div style="border-radius:10px; background:#000; color:#fff; padding:14px; margin:12px 0;">
+          <h3 style="color:#ffd54a; margin:0 0 8px">Product ${idx+1}</h3>
+          <p style="margin:6px 0"><strong>Product Name:</strong> ${escapeHtml(it.name)}</p>
+          <p style="margin:6px 0"><strong>Price:</strong> ₹${escapeHtml(it.price)}</p>
+          <p style="margin:6px 0"><strong>User Email:</strong> ${escapeHtml(it.user_email)}</p>
+          <p style="margin:6px 0"><strong>Image:</strong><br/>
+            <a href="${it.image_url}" target="_blank">
+              <img src="${it.image_url}" style="max-width:260px; max-height:160px; object-fit:cover; border-radius:6px;"/>
+            </a>
+          </p>
+        </div>
+      `;
+    });
+    html += `</div>`;
+
+    // 3) send via EmailJS in a single message (your template must include {{html}})
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      html: html,
+      subject: `New consignment — ${itemsWithUrls.length} product(s)`
+    });
+
+    alert('Email sent! You will receive one email with all products.');
+    // optional: clear the UI or redirect to thank you page
+    // location.href = 'thankyou-consignment.html';
+    productsEl.innerHTML = '';
+    createProductBlock();
+
+  } catch (err){
+    console.error(err);
+    alert('Error: '+ (err.message || JSON.stringify(err)));
+  } finally {
+    submitAllBtn.disabled = false;
+    submitAllBtn.textContent = 'Submit All';
+    addProductBtn.disabled = false;
+  }
+});
+
+// small helper: escape HTML
+function escapeHtml(str = '') {
+  return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+</script>
+</body>
+</html>
