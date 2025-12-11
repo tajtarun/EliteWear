@@ -1,89 +1,114 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Consignment Upload — EliteWear</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Consignment — EliteWear</title>
 
 <!-- Supabase client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
-
 <!-- EmailJS -->
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
 <style>
-  /* Minimal luxurious gold/black UI */
-  :root{--gold:#d4af37;--bg:#070707;--card:#0f0f0f;--muted:#2b2b2b}
-  body{margin:0;background:var(--bg);color:#fff;font-family:Poppins,system-ui,Arial;padding:30px;display:flex;justify-content:center}
-  .wrap{max-width:980px;width:100%;display:flex;gap:28px}
-  .left{width:42%;display:flex;flex-direction:column;gap:12px}
-  .upload-box{height:360px;background:var(--card);border-radius:16px;border:3px dashed var(--gold);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden}
-  .plus{font-size:72px;color:var(--gold);animation:glow 1.4s infinite alternate}
-  @keyframes glow{from{text-shadow:0 0 8px var(--gold)}to{text-shadow:0 0 26px var(--gold)}}
-  .preview{width:100%;height:100%;object-fit:cover;display:none}
+:root{--bg:#050505;--card:#0f0f0f;--gold:#d4af37;--muted:#bfb8ad}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#fff;font-family:'Poppins',sans-serif;padding:36px}
+.container{max-width:1100px;margin:0 auto}
+.header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.title{font-size:22px;color:var(--gold);font-weight:700}
+.lead{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:420px 1fr;gap:22px}
+.card{background:var(--card);border-radius:14px;padding:18px;border:1px solid rgba(212,175,55,0.06)}
+.upload-box{height:360px;border-radius:12px;border:3px dashed rgba(212,175,55,0.6);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;background:linear-gradient(180deg,#070707,#111)}
+.plus{font-size:88px;color:var(--gold);animation:glow 1.4s infinite alternate}
+@keyframes glow{from{text-shadow:0 0 10px rgba(212,175,55,0.2)}to{text-shadow:0 0 28px rgba(212,175,55,0.4)}}
+.preview{width:100%;height:100%;object-fit:cover;display:none;border-radius:10px}
 
-  .right{width:58%;background:var(--card);padding:22px;border-radius:14px;border:2px solid rgba(255,215,0,0.12);box-shadow:0 8px 30px rgba(0,0,0,0.6)}
-  label{display:block;color:var(--gold);font-weight:700;margin-top:12px}
-  input[type=text], input[type=number], input[type=email], textarea{
-    width:100%;padding:12px;border-radius:10px;background:#171717;border:1px solid #222;color:#fff;margin-top:6px;box-sizing:border-box;font-size:14px
-  }
-  textarea{height:120px;resize:vertical}
-  .row{display:flex;gap:12px}
-  .col{flex:1}
+/* right column form layout */
+.right-form { display:flex; flex-direction:column; gap:12px; }
+.row-list { display:flex; flex-direction:column; gap:14px; margin-top:10px; }
+.row-item { display:flex; gap:12px; align-items:flex-start; background:#0b0b0b;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02) }
+.row-upload { width:140px; height:120px; border-radius:10px; border:2px dashed rgba(212,175,55,0.45); display:flex;align-items:center;justify-content:center; cursor:pointer; overflow:hidden; background:#080808; }
+.row-upload img{width:100%;height:100%;object-fit:cover;display:none}
+.row-fields{flex:1; display:flex; flex-direction:column; gap:8px}
+label{color:var(--gold);font-weight:600;font-size:13px}
+input[type="text"], input[type="number"], input[type="email"]{width:100%;padding:10px;border-radius:8px;border:none;background:#111;color:#fff}
+.small{font-size:12px;color:var(--muted)}
 
-  .submit{display:block;margin-top:18px;background:linear-gradient(90deg,#b8860b,#ffd700);color:#000;padding:14px;border-radius:12px;border:none;font-weight:800;cursor:pointer}
-  .loading{display:none;color:var(--gold);margin-top:12px;text-align:center}
-  .hint{font-size:13px;color:#ccc;margin-top:8px}
-  .small{font-size:13px;color:#aaa}
-  /* responsive */
-  @media (max-width:880px){.wrap{flex-direction:column}.left,.right{width:100%}}
+/* buttons */
+.controls{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:12px}
+.btn { padding:10px 14px;border-radius:10px;border:none;font-weight:700;cursor:pointer }
+.btn.gold { background:linear-gradient(90deg,#b8860b,#ffd54a); color:#000 }
+.btn.ghost { background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04) }
+
+/* submit area */
+.footer{display:flex;justify-content:space-between;align-items:center;margin-top:18px}
+.submit { padding:12px 20px;border-radius:12px;border:none;background:var(--gold);color:#000;font-weight:800;cursor:pointer }
+
+/* responsive */
+@media (max-width:980px){
+  .grid{grid-template-columns:1fr; }
+  .upload-box{height:260px}
+  .row-upload{width:120px;height:100px}
+}
 </style>
 </head>
 <body>
-
-<div class="wrap">
-
-  <!-- LEFT: image upload -->
-  <div class="left">
-    <div class="upload-box" id="uploadBox" onclick="document.getElementById('product_image').click()">
-      <span class="plus" id="plusIcon">+</span>
-      <img id="previewImage" class="preview" alt="preview">
+<div class="container">
+  <div class="header">
+    <div>
+      <div class="title">EliteWear — Consignment</div>
+      <div class="lead">Add your luxury items. Upload image on left, enter product name & price on the right. Add unlimited rows.</div>
     </div>
-    <div class="hint">Click the box to choose an image (will be uploaded to Supabase and attached to the email).</div>
-    <input id="product_image" type="file" accept="image/*" style="display:none">
+    <div class="small">You will be redirected to a thank you page after submission.</div>
   </div>
 
-  <!-- RIGHT: fields -->
-  <form id="consignmentForm" class="right" autocomplete="off">
-    <h2 style="margin:0 0 8px 0;color:var(--gold)">Submit Your Product for Consignment</h2>
+  <div class="grid">
+    <!-- LEFT: big upload + preview (this is a global preview for the selected row) -->
+    <div class="card">
+      <div id="bigUpload" class="upload-box" title="Click to choose image (for the active row)">
+        <span id="bigPlus" class="plus">+</span>
+        <img id="bigPreview" class="preview" alt="preview">
+      </div>
+      <div class="small" style="margin-top:12px">Click the upload box for the currently active row (active row is the one highlighted on the right). You can also click each row's upload area to select image specific to that row.</div>
+    </div>
 
-    <label>Product Name *</label>
-    <input id="product_name" type="text" placeholder="e.g. Leather Jacket" required>
+    <!-- RIGHT: form + cloned rows -->
+    <div class="card right-form">
+      <div>
+        <label>Your Name *</label>
+        <input id="user_name" type="text" placeholder="Your full name" required>
 
-    <label>Product Price *</label>
-    <input id="product_price" type="number" placeholder="e.g. 1299" required>
+        <label style="margin-top:8px">Your Gmail *</label>
+        <input id="user_email" type="email" placeholder="you@example.com" required>
+      </div>
 
-    <label>Your Email (used as reply-to) *</label>
-    <input id="user_email" type="email" placeholder="you@example.com" required>
+      <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-weight:700;color:var(--gold)">Products</div>
+        <div style="display:flex;gap:8px">
+          <button id="addRowBtn" class="btn gold">+ Add Product</button>
+          <button id="clearBtn" class="btn ghost">Clear</button>
+        </div>
+      </div>
 
-    <label>Your Name</label>
-    <input id="user_name" type="text" placeholder="Your name (optional)">
+      <div id="rows" class="row-list" aria-live="polite"></div>
 
-    <button class="submit" type="submit">Submit Consignment</button>
-
-    <div id="loadingSpinner" class="loading">Uploading &amp; sending — please wait…</div>
-    <div class="small">Phones & Gmail sometimes hide remote images until you click "Show images" in the mail.</div>
-  </form>
-
+      <div class="footer">
+        <div class="small">Make sure your Gmail is correct. Images are hosted publicly.</div>
+        <button id="submitBtn" class="submit">Submit All</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-/* ===========================
-   CONFIG - replace only if needed
-   (I used the keys/IDs you already provided)
-   =========================== */
-emailjs.init("ZOt4YXfU6cDioZWJG"); // EmailJS public key
-
+/* ======================
+   CONFIG — change only here if needed
+   ====================== */
+emailjs.init("ZOt4YXfU6cDioZWJG"); // your EmailJS public key
 const EMAILJS_SERVICE_ID = "service_f8g34x6";
 const EMAILJS_TEMPLATE_ID = "template_trg9yth";
 
@@ -91,101 +116,233 @@ const SUPABASE_URL = "https://eonwirzbhwcpfqiltyjp.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvbndpcnpiaHdjcGZxaWx0eWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTYwNjksImV4cCI6MjA3OTczMjA2OX0.kT-pqelZyTfiaoaKSbSqFLPW7xwbemZ2V4Y-WpyHN8Q";
 const BUCKET = "product-images";
 
-/* -------------------------
-   INIT SUPABASE CLIENT
---------------------------*/
 const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* -------------------------
-   DOM refs
---------------------------*/
-const productImageInput = document.getElementById('product_image');
-const previewImage = document.getElementById('previewImage');
-const plusIcon = document.getElementById('plusIcon');
-const uploadBox = document.getElementById('uploadBox');
-const form = document.getElementById('consignmentForm');
-const loadingSpinner = document.getElementById('loadingSpinner');
+/* ======================
+   UI & state
+   ====================== */
+const rowsEl = document.getElementById('rows');
+const addRowBtn = document.getElementById('addRowBtn');
+const clearBtn = document.getElementById('clearBtn');
+const submitBtn = document.getElementById('submitBtn');
+const bigUpload = document.getElementById('bigUpload');
+const bigPlus = document.getElementById('bigPlus');
+const bigPreview = document.getElementById('bigPreview');
 
-/* -------------------------
-   Image preview
---------------------------*/
-productImageInput.addEventListener('change', () => {
-  const f = productImageInput.files[0];
-  if (!f) return;
-  previewImage.src = URL.createObjectURL(f);
-  previewImage.style.display = 'block';
-  plusIcon.style.display = 'none';
-});
+let activeRowId = null;
+let nextId = 0;
+const rows = []; // will hold objects {id, file, name, price}
 
-/* -------------------------
-   Helper: show/hide loading
---------------------------*/
-function showLoading(show){
-  loadingSpinner.style.display = show ? 'block' : 'none';
+/* -------------------
+   helpers
+   ------------------- */
+function createRowNode(id){
+  const container = document.createElement('div');
+  container.className = 'row-item';
+  container.id = 'row-'+id;
+
+  container.innerHTML = `
+    <div class="row-upload" id="upload-${id}" title="Click to upload image for this product">
+      <span class="plus" id="plus-${id}">+</span>
+      <img id="img-${id}" alt="preview">
+      <input id="file-${id}" type="file" accept="image/*" style="display:none">
+    </div>
+
+    <div class="row-fields">
+      <label>Product Name</label>
+      <input id="name-${id}" type="text" placeholder="e.g. Vintage Watch" required>
+
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <div style="flex:1">
+          <label>Price ₹</label>
+          <input id="price-${id}" type="number" placeholder="e.g. 1200" required>
+        </div>
+        <div style="width:90px; display:flex; align-items:flex-end; gap:8px;">
+          <button type="button" id="setActive-${id}" class="btn ghost">Select</button>
+          <button type="button" id="remove-${id}" class="btn ghost">Remove</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // event wiring after insertion
+  rowsEl.appendChild(container);
+
+  // upload box click -> file input
+  const upl = document.getElementById('upload-'+id);
+  const fileInput = document.getElementById('file-'+id);
+  const previewImg = document.getElementById('img-'+id);
+  const plusIcon = document.getElementById('plus-'+id);
+
+  upl.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files[0];
+    if (!f) return;
+    rows.find(r=>r.id===id).file = f;
+    previewImg.src = URL.createObjectURL(f);
+    previewImg.style.display = 'block';
+    plusIcon.style.display = 'none';
+    // if this is active row reflect into big preview
+    if(activeRowId === id){
+      bigPreview.src = previewImg.src;
+      bigPreview.style.display = 'block';
+      bigPlus.style.display = 'none';
+    }
+  });
+
+  // set active row button
+  document.getElementById('setActive-'+id).addEventListener('click', () => {
+    setActiveRow(id);
+  });
+
+  // remove
+  document.getElementById('remove-'+id).addEventListener('click', () => {
+    removeRow(id);
+  });
+
+  // text inputs update state
+  document.getElementById('name-'+id).addEventListener('input', (e)=> {
+    rows.find(r=>r.id===id).name = e.target.value;
+  });
+  document.getElementById('price-'+id).addEventListener('input', (e)=> {
+    rows.find(r=>r.id===id).price = e.target.value;
+  });
 }
 
-/* -------------------------
-   Submit handler
---------------------------*/
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  showLoading(true);
+function addNewRow(prefill){
+  nextId++;
+  const id = nextId;
+  rows.push({ id, file: null, name: prefill?.name || '', price: prefill?.price || '' });
+  createRowNode(id);
+  // prefill values if provided
+  if(prefill){
+    document.getElementById('name-'+id).value = prefill.name || '';
+    document.getElementById('price-'+id).value = prefill.price || '';
+  }
+  setActiveRow(id);
+}
 
-  const productName = document.getElementById('product_name').value.trim();
-  const productPrice = document.getElementById('product_price').value.trim();
-  const userEmail = document.getElementById('user_email').value.trim();
+function setActiveRow(id){
+  activeRowId = id;
+  // highlight active
+  document.querySelectorAll('.row-item').forEach(el=>{
+    el.style.boxShadow = (el.id === 'row-'+id) ? '0 0 18px rgba(212,175,55,0.18)' : 'none';
+  });
+  // set big preview if row has file
+  const r = rows.find(x=>x.id===id);
+  if(r && r.file){
+    bigPreview.src = URL.createObjectURL(r.file);
+    bigPreview.style.display = 'block';
+    bigPlus.style.display = 'none';
+  } else {
+    bigPreview.style.display = 'none';
+    bigPlus.style.display = 'block';
+  }
+}
+
+function removeRow(id){
+  const idx = rows.findIndex(r=>r.id===id);
+  if(idx>-1) rows.splice(idx,1);
+  const el = document.getElementById('row-'+id);
+  if(el) el.remove();
+  // set active to first row if exists
+  if(rows.length) setActiveRow(rows[0].id);
+  else addNewRow();
+}
+
+/* initial */
+addRowBtn.addEventListener('click', ()=> addNewRow());
+clearBtn.addEventListener('click', ()=> {
+  rowsEl.innerHTML = '';
+  rows.length = 0;
+  nextId = 0;
+  addNewRow();
+});
+
+/* big upload: clicking big box triggers file input of active row */
+bigUpload.addEventListener('click', ()=>{
+  if(!activeRowId) return;
+  const fileInput = document.getElementById('file-'+activeRowId);
+  if(fileInput) fileInput.click();
+});
+
+/* =========================
+   Submit: upload all files and send EmailJS
+   ========================= */
+submitBtn.addEventListener('click', async () => {
+  // validation: user name + email + each row fields + file
   const userName = document.getElementById('user_name').value.trim();
-  const file = productImageInput.files[0];
+  const userEmail = document.getElementById('user_email').value.trim();
+  if(!userName || !userEmail) { alert('Please provide your name and email'); return; }
+  if(rows.length===0){ alert('Add at least one product'); return; }
 
-  if (!productName || !productPrice || !userEmail || !file) {
-    alert('Please fill required fields and choose an image.');
-    showLoading(false);
-    return;
+  // validate each row fields
+  for(const r of rows){
+    const nameEl = document.getElementById('name-'+r.id);
+    const priceEl = document.getElementById('price-'+r.id);
+    if(!nameEl || !priceEl){ alert('Row inputs missing'); return; }
+    if(!nameEl.value.trim() || !priceEl.value.trim()){ alert('Please fill name and price for every product'); return; }
+    if(!r.file){ alert('Please upload image for every product'); return; }
   }
 
+  // disable UI
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Uploading & Sending...';
+  addRowBtn.disabled = true;
+  clearBtn.disabled = true;
+
   try {
-    // 1) Upload image to Supabase storage
-    const fileName = `${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
-    const up = await supabase.storage.from(BUCKET).upload(fileName, file);
+    // 1) upload each file to supabase in parallel
+    const uploads = await Promise.all(rows.map(async (r) => {
+      const fileName = `${Date.now()}_${r.file.name.replace(/\s+/g,'_')}`;
+      const up = await supabase.storage.from(BUCKET).upload(fileName, r.file);
+      if(up.error) throw up.error;
+      const { data } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
+      return data.publicUrl;
+    }));
 
-    if (up.error) throw up.error;
+    // 2) assemble product_list_html
+    let product_list_html = `<div style="font-family:Poppins, Arial, sans-serif; background:#000; color:#fff; padding:12px;">`;
+    rows.forEach((r, idx) => {
+      const image = uploads[idx];
+      const pname = escapeHtml(document.getElementById('name-'+r.id).value.trim());
+      const pprice = escapeHtml(document.getElementById('price-'+r.id).value.trim());
+      product_list_html += `
+        <div style="background:#111;padding:12px;border-radius:10px;margin-bottom:12px;">
+          <h3 style="color:${'#d4af37'};margin:0 0 8px">Product ${idx+1}</h3>
+          <p style="margin:4px 0"><strong style="color:${'#d4af37'}">Name:</strong> ${pname}</p>
+          <p style="margin:4px 0"><strong style="color:${'#d4af37'}">Price:</strong> ₹${pprice}</p>
+          <p style="margin:8px 0"><a href="${image}" target="_blank"><img src="${image}" style="max-width:260px;border-radius:8px" /></a></p>
+        </div>`;
+    });
+    product_list_html += `</div>`;
 
-    // 2) Get public URL
-    const { data: pub } = await supabase.storage.from(BUCKET).getPublicUrl(fileName);
-    const imageUrl = pub.publicUrl;
-
-    // 3) Insert record (optional)
-    const { error: insertError } = await supabase.from('products').insert([{
-      product_name: productName,
-      product_price: productPrice,
-      image_url: imageUrl,
-      user_email: userEmail,
-      user_name: userName || null
-    }]);
-    if (insertError) console.warn('DB insert warning:', insertError);
-
-    // 4) Send email via EmailJS
-    // NOTE: template must use {{attachment}} for image
+    // 3) send email via EmailJS
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      product_name: productName,
-      product_price: productPrice,
-      user_email: userEmail,
       user_name: userName,
-      attachment: imageUrl,     // <--- template must use {{attachment}}
+      user_email: userEmail,
+      product_list_html: product_list_html,
       year: new Date().getFullYear()
     });
 
-    // 5) Redirect to thank you
+    // 4) redirect to thank you
     window.location.href = 'thankyou-consignment.html';
 
-  } catch (err) {
+  } catch (err){
     console.error(err);
-    alert('Error submitting. Open DevTools console (F12) and check the error.');
-  } finally {
-    showLoading(false);
+    alert('Error sending. See console.');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit All';
+    addRowBtn.disabled = false;
+    clearBtn.disabled = false;
   }
 });
-</script>
 
+/* small helper */
+function escapeHtml(s=''){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* create initial row */
+addNewRow();
+</script>
 </body>
 </html>
