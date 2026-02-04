@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 const express = require("express");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
@@ -7,19 +8,22 @@ const fs = require("fs");
 const path = require("path");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Middleware
+/* ================= MIDDLEWARE ================= */
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-// Data files
+/* ================= DATA FILES ================= */
+
 const PRODUCTS_FILE = "./data/products.json";
 const ORDERS_FILE = "./data/orders.json";
 
-// Ensure data folders
+/* ================= FOLDERS ================= */
+
 if (!fs.existsSync("data")) fs.mkdirSync("data");
 if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
 
@@ -29,7 +33,8 @@ if (!fs.existsSync(PRODUCTS_FILE))
 if (!fs.existsSync(ORDERS_FILE))
   fs.writeFileSync(ORDERS_FILE, "[]");
 
-// File Upload
+/* ================= FILE UPLOAD ================= */
+
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
@@ -39,44 +44,57 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Mail Config
+/* ================= MAIL CONFIG ================= */
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.GMAIL,
-    pass: process.env.APP_PASSWORD
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
-// Helpers
+/* ================= HELPERS ================= */
+
 function readJSON(file) {
-  return JSON.parse(fs.readFileSync(file));
+  return JSON.parse(fs.readFileSync(file, "utf8"));
 }
 
 function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-// ================= ADMIN =================
+/* ================= ADMIN ================= */
 
-// Upload Product
+// Add Product
 app.post("/api/admin/add-product", upload.single("image"), (req, res) => {
+  try {
 
-  const { name, price } = req.body;
-  const image = req.file.filename;
+    const { name, price } = req.body;
 
-  const products = readJSON(PRODUCTS_FILE);
+    if (!req.file) {
+      return res.status(400).json({ success: false });
+    }
 
-  products.push({
-    id: Date.now(),
-    name,
-    price,
-    image
-  });
+    const image = req.file.filename;
 
-  writeJSON(PRODUCTS_FILE, products);
+    const products = readJSON(PRODUCTS_FILE);
 
-  res.json({ success: true });
+    products.push({
+      id: Date.now(),
+      name,
+      price,
+      image
+    });
+
+    writeJSON(PRODUCTS_FILE, products);
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
+  }
 });
 
 // Get Products
@@ -84,128 +102,153 @@ app.get("/api/products", (req, res) => {
   res.json(readJSON(PRODUCTS_FILE));
 });
 
-// ================= CART / ORDER =================
+/* ================= ORDER ================= */
 
-// Place Order
 app.post("/api/order", async (req, res) => {
 
-  const { user, cart, total } = req.body;
+  try {
 
-  const orders = readJSON(ORDERS_FILE);
+    const { user, cart, total } = req.body;
 
-  const order = {
-    id: Date.now(),
-    user,
-    cart,
-    total,
-    date: new Date()
-  };
+    const orders = readJSON(ORDERS_FILE);
 
-  orders.push(order);
-  writeJSON(ORDERS_FILE, orders);
+    const order = {
+      id: Date.now(),
+      user,
+      cart,
+      total,
+      date: new Date()
+    };
 
-  // Build Email
-  let itemsHTML = "";
+    orders.push(order);
 
-  cart.forEach(item => {
-    itemsHTML += `
-      <p>
-        <b>${item.name}</b><br>
-        Price: ₹${item.price}<br>
-        Qty: ${item.qty}
-      </p>
-      <hr>
-    `;
-  });
+    writeJSON(ORDERS_FILE, orders);
 
-  const mailOptions = {
-    from: process.env.GMAIL,
-    to: process.env.GMAIL,
-    subject: "🛒 New Order - EliteWear",
-    html: `
-      <h2>New Order Received</h2>
+    let itemsHTML = "";
 
-      <h3>Customer</h3>
-      <p>
-        Name: ${user.name}<br>
-        Email: ${user.email}<br>
-        Phone: ${user.phone}<br>
-        Address: ${user.address}
-      </p>
+    cart.forEach(item => {
+      itemsHTML += `
+        <p>
+          <b>${item.name}</b><br>
+          Price: ₹${item.price}<br>
+          Qty: ${item.qty}
+        </p>
+        <hr>
+      `;
+    });
 
-      <h3>Items</h3>
-      ${itemsHTML}
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER,
+      subject: "🛒 New Order - EliteWear",
+      html: `
+        <h2>New Order Received</h2>
 
-      <h3>Total: ₹${total}</h3>
-    `
-  };
+        <h3>Customer</h3>
+        <p>
+          Name: ${user.name}<br>
+          Email: ${user.email}<br>
+          Phone: ${user.phone}<br>
+          Address: ${user.address}
+        </p>
 
-  await transporter.sendMail(mailOptions);
+        <h3>Items</h3>
+        ${itemsHTML}
 
-  res.json({ success: true });
+        <h3>Total: ₹${total}</h3>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
+  }
 });
 
-// ================= CONSIGNMENT =================
+/* ================= CONSIGNMENT ================= */
 
 app.post("/api/consignment", upload.single("image"), async (req, res) => {
 
-  const { name, price } = req.body;
-  const image = req.file.filename;
+  try {
 
-  const mailOptions = {
-    from: process.env.GMAIL,
-    to: process.env.GMAIL,
-    subject: "📦 New Consignment",
-    html: `
-      <h2>New Consignment</h2>
+    const { name, price } = req.body;
 
-      <p>Name: ${name}</p>
-      <p>Price: ₹${price}</p>
+    if (!req.file) {
+      return res.status(400).json({ success: false });
+    }
 
-      <img src="cid:img"/>
-    `,
-    attachments: [
-      {
-        filename: image,
-        path: "./uploads/" + image,
-        cid: "img"
-      }
-    ]
-  };
+    const image = req.file.filename;
 
-  await transporter.sendMail(mailOptions);
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER,
+      subject: "📦 New Consignment",
+      html: `
+        <h2>New Consignment</h2>
 
-  res.json({ success: true });
+        <p>Name: ${name}</p>
+        <p>Price: ₹${price}</p>
+
+        <img src="cid:img"/>
+      `,
+      attachments: [
+        {
+          filename: image,
+          path: "./uploads/" + image,
+          cid: "img"
+        }
+      ]
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
+  }
 });
 
-// ================= CONTACT =================
+/* ================= CONTACT ================= */
 
 app.post("/api/contact", async (req, res) => {
 
-  const { name, email, message } = req.body;
+  try {
 
-  const mailOptions = {
-    from: process.env.GMAIL,
-    to: process.env.GMAIL,
-    subject: "📩 Contact Message",
-    html: `
-      <h3>Contact Form</h3>
+    const { name, email, message } = req.body;
 
-      <p>Name: ${name}</p>
-      <p>Email: ${email}</p>
-      <p>${message}</p>
-    `
-  };
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER,
+      subject: "📩 Contact Message",
+      html: `
+        <h3>Contact Form</h3>
 
-  await transporter.sendMail(mailOptions);
+        <p>Name: ${name}</p>
+        <p>Email: ${email}</p>
+        <p>${message}</p>
+      `
+    };
 
-  res.json({ success: true });
+    await transporter.sendMail(mailOptions);
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
+  }
 });
 
-// ================= SERVER =================
+/* ================= SERVER ================= */
 
 app.use("/uploads", express.static("uploads"));
 
 app.listen(PORT, () => {
-  console.log("Server running on http://localhost:" + PORT);
+  console.log("Server running on port " + PORT);
 });
