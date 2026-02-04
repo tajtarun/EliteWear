@@ -1,36 +1,119 @@
-<!-- ONLY JS LOGIC FIXED — CSS UNCHANGED -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EliteWear Admin Panel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+      padding: 50px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 10px;
+      width: 250px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background: gold;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #panel {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Admin Login</h2>
+
+<div id="login">
+  <input type="password" id="password" placeholder="Admin Password">
+  <br>
+  <button onclick="login()">Login</button>
+</div>
+
+<div id="panel">
+
+  <h2>Add Product</h2>
+
+  <input type="file" id="image"><br>
+  <input type="text" id="name" placeholder="Product Name"><br>
+  <input type="number" id="price" placeholder="Price"><br>
+
+  <button onclick="uploadProduct()">Confirm</button>
+
+</div>
+
 <script>
-uploadBtn.onclick = async () => {
-  const name = document.getElementById("name").value.trim();
-  const price = Number(document.getElementById("price").value);
-  const imgFile = document.getElementById("image").files[0];
 
-  if (!name || !price || price <= 0 || !imgFile) {
-    setStatus("err","Invalid product details");
+const API_URL = "https://elitewear-backend.onrender.com";
+const ADMIN_PASS = "admin123"; // Change later
+
+function login() {
+  const pass = document.getElementById("password").value;
+
+  if (pass === ADMIN_PASS) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("panel").style.display = "block";
+  } else {
+    alert("Wrong password");
+  }
+}
+
+async function uploadProduct() {
+
+  const img = document.getElementById("image").files[0];
+  const name = document.getElementById("name").value;
+  const price = document.getElementById("price").value;
+
+  if (!img || !name || !price) {
+    alert("Fill all fields");
     return;
   }
 
-  if (!imgFile.type.startsWith("image/")) {
-    setStatus("err","Invalid image file");
-    return;
+  const formData = new FormData();
+
+  formData.append("image", img);
+  formData.append("name", name);
+  formData.append("price", price);
+
+  try {
+
+    const res = await fetch(`${API_URL}/upload`, {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("Product Added!");
+
+      document.getElementById("image").value = "";
+      document.getElementById("name").value = "";
+      document.getElementById("price").value = "";
+
+    } else {
+      alert("Upload failed");
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Server error");
   }
+}
 
-  const filename = `prod_${crypto.randomUUID()}.${imgFile.name.split('.').pop()}`;
-
-  const { error: uploadErr } = await sb.storage.from("product-images").upload(filename, imgFile);
-  if (uploadErr) return setStatus("err","Upload failed");
-
-  const { data } = sb.storage.from("product-images").getPublicUrl(filename);
-
-  const { error } = await sb.from("products").insert({
-    product_name: name,
-    product_price: price,
-    image_url: data.publicUrl
-  });
-
-  if (error) return setStatus("err","Database error");
-
-  popupShow("Product Uploaded!");
-};
 </script>
 
+</body>
+</html>
