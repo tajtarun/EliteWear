@@ -22,7 +22,7 @@ app.use(express.static("public"));
 const PRODUCTS_FILE = "./data/products.json";
 const ORDERS_FILE = "./data/orders.json";
 
-/* ================= FOLDERS ================= */
+/* ================= CREATE FOLDERS ================= */
 
 if (!fs.existsSync("data")) fs.mkdirSync("data");
 if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
@@ -54,6 +54,15 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+/* Verify Gmail */
+transporter.verify((err, success) => {
+  if (err) {
+    console.log("❌ MAIL ERROR:", err);
+  } else {
+    console.log("✅ MAIL SERVER READY");
+  }
+});
+
 /* ================= HELPERS ================= */
 
 function readJSON(file) {
@@ -66,16 +75,14 @@ function writeJSON(file, data) {
 
 /* ================= ADMIN ================= */
 
-// Add Product
 app.post("/api/admin/add-product", upload.single("image"), (req, res) => {
   try {
-
-    const { name, price } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ success: false });
     }
 
+    const { name, price } = req.body;
     const image = req.file.filename;
 
     const products = readJSON(PRODUCTS_FILE);
@@ -89,15 +96,18 @@ app.post("/api/admin/add-product", upload.single("image"), (req, res) => {
 
     writeJSON(PRODUCTS_FILE, products);
 
+    console.log("✅ Product Added:", name);
+
     res.json({ success: true });
 
   } catch (err) {
-    console.error(err);
+    console.log("❌ Admin Error:", err);
     res.status(500).json({ success: false });
   }
 });
 
-// Get Products
+/* ================= PRODUCTS ================= */
+
 app.get("/api/products", (req, res) => {
   res.json(readJSON(PRODUCTS_FILE));
 });
@@ -112,15 +122,13 @@ app.post("/api/order", async (req, res) => {
 
     const orders = readJSON(ORDERS_FILE);
 
-    const order = {
+    orders.push({
       id: Date.now(),
       user,
       cart,
       total,
       date: new Date()
-    };
-
-    orders.push(order);
+    });
 
     writeJSON(ORDERS_FILE, orders);
 
@@ -142,9 +150,8 @@ app.post("/api/order", async (req, res) => {
       to: process.env.EMAIL_USER,
       subject: "🛒 New Order - EliteWear",
       html: `
-        <h2>New Order Received</h2>
+        <h2>New Order</h2>
 
-        <h3>Customer</h3>
         <p>
           Name: ${user.name}<br>
           Email: ${user.email}<br>
@@ -152,7 +159,6 @@ app.post("/api/order", async (req, res) => {
           Address: ${user.address}
         </p>
 
-        <h3>Items</h3>
         ${itemsHTML}
 
         <h3>Total: ₹${total}</h3>
@@ -161,10 +167,12 @@ app.post("/api/order", async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
+    console.log("✅ Order Mail Sent");
+
     res.json({ success: true });
 
   } catch (err) {
-    console.error(err);
+    console.log("❌ Order Error:", err);
     res.status(500).json({ success: false });
   }
 });
@@ -175,12 +183,11 @@ app.post("/api/consignment", upload.single("image"), async (req, res) => {
 
   try {
 
-    const { name, price } = req.body;
-
     if (!req.file) {
       return res.status(400).json({ success: false });
     }
 
+    const { name, price } = req.body;
     const image = req.file.filename;
 
     const mailOptions = {
@@ -188,7 +195,7 @@ app.post("/api/consignment", upload.single("image"), async (req, res) => {
       to: process.env.EMAIL_USER,
       subject: "📦 New Consignment",
       html: `
-        <h2>New Consignment</h2>
+        <h2>Consignment</h2>
 
         <p>Name: ${name}</p>
         <p>Price: ₹${price}</p>
@@ -206,10 +213,12 @@ app.post("/api/consignment", upload.single("image"), async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
+    console.log("✅ Consignment Mail Sent");
+
     res.json({ success: true });
 
   } catch (err) {
-    console.error(err);
+    console.log("❌ Consignment Error:", err);
     res.status(500).json({ success: false });
   }
 });
@@ -227,8 +236,6 @@ app.post("/api/contact", async (req, res) => {
       to: process.env.EMAIL_USER,
       subject: "📩 Contact Message",
       html: `
-        <h3>Contact Form</h3>
-
         <p>Name: ${name}</p>
         <p>Email: ${email}</p>
         <p>${message}</p>
@@ -237,10 +244,12 @@ app.post("/api/contact", async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
+    console.log("✅ Contact Mail Sent");
+
     res.json({ success: true });
 
   } catch (err) {
-    console.error(err);
+    console.log("❌ Contact Error:", err);
     res.status(500).json({ success: false });
   }
 });
@@ -250,5 +259,5 @@ app.post("/api/contact", async (req, res) => {
 app.use("/uploads", express.static("uploads"));
 
 app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log("🚀 Server running on port", PORT);
 });
