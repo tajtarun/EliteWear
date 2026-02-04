@@ -1,65 +1,47 @@
-// INIT EMAILJS
-emailjs.init("ZOt4YXfU6cDioZWJG");
+const API_URL = "https://elitewear-backend.onrender.com";
 
-const EMAILJS_SERVICE_ID = "service_f8g34x6";
-const EMAILJS_TEMPLATE_ID = "template_trg9yth";
+const form = document.getElementById("consignForm");
 
-const SUPABASE_URL = "https://eonwirzbhwcpfqiltyjp.supabase.co";
-const SUPABASE_ANON_KEY =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvbndpcnpiaHdjcGZxaWx0eWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTYwNjksImV4cCI6MjA3OTczMjA2OX0.kT-pqelZyTfiaoaKSbSqFLPW7xwbemZ2V4Y-WpyHN8Q";
+if (form) {
 
-const BUCKET = "product-images";
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  form.addEventListener("submit", async (e) => {
 
-// IMAGE PREVIEW
-document.getElementById("product_image").addEventListener("change", () => {
-    const file = product_image.files[0];
-    if (file) {
-        previewImage.src = URL.createObjectURL(file);
-        previewImage.style.display = "block";
-        plusIcon.style.display = "none";
-    }
-});
-
-// FORM SUBMISSION
-document.getElementById("consignmentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const productName = product_name.value.trim();
-    const productPrice = product_price.value.trim();
-    const file = product_image.files[0];
+    const image = document.getElementById("image").files[0];
+    const name = document.getElementById("name").value;
+    const price = document.getElementById("price").value;
 
-    if (!file) {
-        alert("Please upload product image.");
-        return;
+    if (!image || !name || !price) {
+      alert("Fill all fields");
+      return;
     }
 
-    loadingSpinner.style.display = "block";
+    const data = new FormData();
+
+    data.append("image", image);
+    data.append("name", name);
+    data.append("price", price);
 
     try {
-        // upload to Supabase
-        const fileName = `${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
-        const uploadRes = await supabase.storage.from(BUCKET).upload(fileName, file);
-        if (uploadRes.error) throw uploadRes.error;
 
-        // get public URL
-        const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
-        const imageUrl = pub.publicUrl;
+      const res = await fetch(`${API_URL}/consignment`, {
+        method: "POST",
+        body: data
+      });
 
-        // send email
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-            product_name: productName,
-            product_price: productPrice,
-            attachment: imageUrl
-        });
+      const result = await res.json();
 
-        // now redirect
+      if (result.success) {
         window.location.href = "thankyou-consignment.html";
+      } else {
+        alert("Submit failed");
+      }
 
     } catch (err) {
-        console.error(err);
-        alert("Error occurred — check console.");
+      alert("Server error");
     }
 
-    loadingSpinner.style.display = "none";
-});
+  });
+
+}
