@@ -1,61 +1,92 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>EliteWear — Contact</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>Contact - EliteWear</title>
 
-<style>
-body{
-  margin:0;
-  background:#0b0b0c;
-  font-family:Poppins;
-  color:#fff;
-}
-.container{
-  max-width:700px;
-  margin:60px auto;
-  background:#111;
-  padding:30px;
-  border-radius:16px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.6);
-}
-h1{color:#d4af37;margin:0 0 14px;}
-p{color:#ccc;line-height:1.6;}
-a{color:#d4af37;text-decoration:none;font-weight:600;}
-.contact-box{
-  margin-top:18px;
-  padding:14px;
-  background:#0d0d0d;
-  border-radius:12px;
-  box-shadow:0 6px 18px rgba(0,0,0,0.4);
-}
-.footer{text-align:center;margin-top:40px;color:#888;font-size:14px;}
-</style>
+  <style>
+    body {
+      font-family: Arial;
+      background: #111;
+      color: white;
+      text-align: center;
+      padding: 40px;
+    }
+
+    input, textarea, button {
+      width: 90%;
+      max-width: 350px;
+      padding: 10px;
+      margin: 10px;
+    }
+
+    button {
+      background: gold;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="container">
-  <h1>Contact EliteWear</h1>
-  <p>For any queries, support, consignment details, or business collaboration, feel free to contact us anytime.</p>
+<h2>Contact Us</h2>
 
-  <div class="contact-box">
-      <p><strong>Email:</strong><br>
-      <a href="mailto:jtarunhyd@gmail.com">jtarunhyd@gmail.com</a></p>
+<form id="contactForm">
 
-      <p><strong>Instagram:</strong><br>
-      <a href="https://www.instagram.com/elitewear_2025?igsh=MWIwYnk5cmt5aXZ1dA==" target="_blank">
-        @elitewear_2025
-      </a></p>
-  </div>
+  <input id="name" placeholder="Name" required><br>
 
-  <p style="margin-top:18px;">We typically respond within 24 hours.</p>
-</div>
+  <input id="email" type="email" placeholder="Email" required><br>
 
-<div class="footer">
-  © EliteWear — Crafted with care.<br>— MADE BY TARUN —
-</div>
+  <textarea id="message" placeholder="Message" required></textarea><br>
+
+  <button type="submit">Send</button>
+
+</form>
+
+<script>
+
+const API_URL = "https://elitewear-backend.onrender.com";
+
+document.getElementById("contactForm").addEventListener("submit", async (e) => {
+
+  e.preventDefault();
+
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const message = document.getElementById("message").value;
+
+  try {
+
+    const res = await fetch(`${API_URL}/contact`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        message
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("Message sent!");
+      document.getElementById("contactForm").reset();
+    } else {
+      alert("Failed to send");
+    }
+
+  } catch {
+    alert("Server error");
+  }
+
+});
+
+</script>
 
 </body>
 </html>
