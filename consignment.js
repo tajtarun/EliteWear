@@ -1,4 +1,4 @@
-const API_URL = "https://elitewear-backend.onrender.com";
+const API_URL = "https://elitewear-backend.onrender.com/api";
 
 const form = document.getElementById("consignForm");
 

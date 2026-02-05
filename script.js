@@ -1,5 +1,5 @@
 // LIVE BACKEND URL
-const API_URL = "https://elitewear-backend.onrender.com";
+const API_URL = "https://elitewear-backend.onrender.com/api";
 
 /* ========================
    CART SYSTEM
