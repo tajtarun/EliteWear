@@ -1,5 +1,6 @@
 // LIVE BACKEND URL
-const API_URL = "https://elitewear-backend.onrender.com";
+const API_BASE_URL = "https://elitewear-backend.onrender.com";
+const API_URL = `${API_BASE_URL}/api`;
 
 /* ========================
    CART SYSTEM
@@ -63,11 +64,15 @@ async function loadProducts() {
       const div = document.createElement("div");
       div.className = "product";
 
+      const imageUrl = p.image
+        ? `${API_BASE_URL}/uploads/${p.image}`
+        : "https://via.placeholder.com/300x200?text=No+Image";
+
       div.innerHTML = `
-        <img src="${p.image}" alt="${p.name}">
+        <img src="${imageUrl}" alt="${p.name}">
         <h3>${p.name}</h3>
         <p>₹${p.price}</p>
-        <button onclick="addToCart('${p._id}','${p.name}',${p.price},'${p.image}')">
+        <button onclick="addToCart('${p.id}','${p.name}',${p.price},'${imageUrl}')">
           Add to Cart
         </button>
       `;
@@ -86,6 +91,8 @@ async function loadProducts() {
 
 async function placeOrder(userData) {
   try {
+    const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
     const res = await fetch(`${API_URL}/order`, {
       method: "POST",
       headers: {
@@ -93,7 +100,8 @@ async function placeOrder(userData) {
       },
       body: JSON.stringify({
         user: userData,
-        cart: cart
+        cart: cart,
+        total
       })
     });
 
