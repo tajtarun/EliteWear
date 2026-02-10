@@ -1,9 +1,11 @@
-<<<<<<< HEAD
 require("dotenv").config();
 
 const express = require("express");
-const nodemailer = require("nodemailer");
 const cors = require("cors");
+const nodemailer = require("nodemailer");
+const multer = require("multer");
+const jwt = require("jsonwebtoken");
+const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 
@@ -11,168 +13,91 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Test route
-app.get("/", (req, res) => {
-  res.send("Server is running ✅");
+// Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
+
+// Multer (file upload)
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Email Transport
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
 });
 
-// Email route
+// Test route
+app.get("/", (req, res) => {
+  res.send("EliteWear Backend Running ✅");
+});
+
+// Contact Form
 app.post("/contact", async (req, res) => {
   const { name, email, message } = req.body;
 
-  if (!name || !email || !message) {
-    return res.status(400).json({ error: "All fields are required" });
-  }
-
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: process.env.EMAIL_USER,
-      subject: "New Contact Form Message",
-      html: `
-        <h3>New Message</h3>
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Message:</b> ${message}</p>
+      subject: "New Contact Form",
+      text: `
+Name: ${name}
+Email: ${email}
+Message: ${message}
       `,
     });
 
     res.json({ success: true, message: "Email sent successfully ✅" });
-  } catch (error) {
-    console.error("Mail Error:", error);
-    res.status(500).json({ error: "Failed to send email" });
-  }
-});
-
-// Port
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
-});
-=======
-require("dotenv").config();
-
-const express = require("express");
-const nodemailer = require("nodemailer");
-const cors = require("cors");
-const multer = require("multer");
-const jwt = require("jsonwebtoken");
-
-const app = express();
-const upload = multer({ dest: "uploads/" });
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Home test
-app.get("/", (req, res) => {
-  res.send("Server is running ✅");
-});
-
-// ================= CONTACT =================
-app.post("/contact", async (req, res) => {
-  const { name, email, message } = req.body;
-
-  try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER,
-      subject: "New Contact Message",
-      html: `
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Message:</b> ${message}</p>
-      `,
-    });
-
-    res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Mail failed" });
+    res.status(500).json({ success: false });
   }
 });
 
-// ================= CONSIGNMENT =================
-app.post("/consignment", upload.single("photo"), async (req, res) => {
-  const { productName, price } = req.body;
+// Consignment Upload
+app.post("/consign", upload.single("image"), async (req, res) => {
+  const { name, price } = req.body;
+  const file = req.file;
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    // Upload to Supabase storage
+    const fileName = `${Date.now()}_${file.originalname}`;
 
+    const { error } = await supabase.storage
+      .from("products")
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+      });
+
+    if (error) throw error;
+
+    // Send Email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: process.env.EMAIL_USER,
       subject: "New Consignment",
-      html: `
-        <p><b>Product:</b> ${productName}</p>
-        <p><b>Price:</b> ₹${price}</p>
+      text: `
+Product: ${name}
+Price: ${price}
+File: ${fileName}
       `,
-      attachments: [
-        {
-          filename: req.file.originalname,
-          path: req.file.path,
-        },
-      ],
     });
 
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Upload failed" });
+    res.status(500).json({ success: false });
   }
 });
 
-// ================= ADMIN LOGIN =================
-app.post("/admin/login", (req, res) => {
-  const { password } = req.body;
-
-  if (password === "admin123") {
-    const token = jwt.sign(
-      { admin: true },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    res.json({ token });
-  } else {
-    res.status(401).json({ error: "Wrong password" });
-  }
-});
-
-// ================= SERVER =================
+// Start Server
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });
->>>>>>> f6890d329818f6ba75dff96c9738d5545f274d8c
