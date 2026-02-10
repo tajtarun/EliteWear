@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EliteWear Admin Panel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+      padding: 50px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 10px;
+      width: 250px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background: gold;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #panel {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Admin Login</h2>
+
+<div id="login">
+  <input type="password" id="password" placeholder="Admin Password">
+  <br>
+  <button onclick="login()">Login</button>
+</div>
+
+<div id="panel">
+
+  <h2>Add Product</h2>
+
+  <input type="file" id="image"><br>
+  <input type="text" id="name" placeholder="Product Name"><br>
+  <input type="number" id="price" placeholder="Price"><br>
+
+  <button onclick="uploadProduct()">Confirm</button>
+
+</div>
+
+<script>
+
+const API_URL = "https://elitewear-backend.onrender.com";
+const ADMIN_PASS = "admin123"; // Change later
+
+function login() {
+  const pass = document.getElementById("password").value;
+
+  if (pass === ADMIN_PASS) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("panel").style.display = "block";
+  } else {
+    alert("Wrong password");
+  }
+}
+
+async function uploadProduct() {
+
+  const img = document.getElementById("image").files[0];
+  const name = document.getElementById("name").value;
+  const price = document.getElementById("price").value;
+
+  if (!img || !name || !price) {
+    alert("Fill all fields");
+    return;
+  }
+
+  const formData = new FormData();
+
+  formData.append("image", img);
+  formData.append("name", name);
+  formData.append("price", price);
+
+  try {
+
+    const res = await fetch(`${API_URL}/upload`, {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("Product Added!");
+
+      document.getElementById("image").value = "";
+      document.getElementById("name").value = "";
+      document.getElementById("price").value = "";
+
+    } else {
+      alert("Upload failed");
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Server error");
+  }
+}
+
+</script>
+
+</body>
+</html>

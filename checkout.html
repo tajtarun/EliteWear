@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Checkout - EliteWear</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #111;
+      color: white;
+      padding: 20px;
+    }
+
+    .item {
+      border-bottom: 1px solid #444;
+      padding: 10px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 8px;
+      width: 90%;
+      max-width: 300px;
+    }
+
+    button {
+      background: gold;
+      border: none;
+      font-weight: bold;
+    }
+
+    #loginBox {
+      display: none;
+      background: #222;
+      padding: 20px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Checkout</h2>
+
+<div id="cartBox"></div>
+
+<h3 id="total"></h3>
+
+<button onclick="buy()">Buy</button>
+
+<div id="loginBox">
+
+  <h3>Sign In</h3>
+
+  <input id="name" placeholder="Name"><br>
+  <input id="email" placeholder="Gmail"><br>
+  <input id="phone" placeholder="Phone"><br>
+  <input id="address" placeholder="Address"><br>
+
+  <button onclick="submitLogin()">Confirm</button>
+
+</div>
+
+<script>
+
+const API_URL = "https://elitewear-backend.onrender.com";
+
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+let user = JSON.parse(localStorage.getItem("userData"));
+
+/* =====================
+   LOAD CART
+===================== */
+
+function loadCart() {
+
+  const box = document.getElementById("cartBox");
+  let total = 0;
+
+  box.innerHTML = "";
+
+  cart.forEach(item => {
+
+    total += item.price * item.qty;
+
+    box.innerHTML += `
+      <div class="item">
+        <b>${item.name}</b><br>
+        Price: ₹${item.price}<br>
+        Qty: ${item.qty}
+      </div>
+    `;
+  });
+
+  document.getElementById("total").innerText =
+    "Total: ₹" + total;
+
+  return total;
+}
+
+/* =====================
+   BUY
+===================== */
+
+function buy() {
+
+  if (!cart.length) {
+    alert("Cart empty");
+    return;
+  }
+
+  if (!user) {
+    document.getElementById("loginBox").style.display = "block";
+  } else {
+    placeOrder();
+  }
+}
+
+/* =====================
+   LOGIN
+===================== */
+
+function submitLogin() {
+
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const phone = document.getElementById("phone").value;
+  const address = document.getElementById("address").value;
+
+  if (!name || !email || !phone || !address) {
+    alert("Fill all fields");
+    return;
+  }
+
+  user = { name, email, phone, address };
+
+  localStorage.setItem("userData", JSON.stringify(user));
+
+  document.getElementById("loginBox").style.display = "none";
+
+  placeOrder();
+}
+
+/* =====================
+   ORDER
+===================== */
+
+async function placeOrder() {
+
+  const total = loadCart();
+
+  try {
+
+    const res = await fetch(`${API_URL}/order`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        user,
+        cart,
+        total
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+
+      alert("Order Placed Successfully!");
+
+      localStorage.removeItem("cart");
+
+      window.location.href = "thankyou.html";
+
+    } else {
+      alert("Order Failed");
+    }
+
+  } catch (err) {
+    alert("Server error");
+  }
+}
+
+/* =====================
+   INIT
+===================== */
+
+loadCart();
+
+</script>
+
+</body>
+</html>
