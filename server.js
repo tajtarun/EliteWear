@@ -4,60 +4,85 @@ const express = require("express");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
-const jwt = require("jsonwebtoken");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 
-// Middleware
+/* ================= MIDDLEWARE ================= */
+
 app.use(cors());
 app.use(express.json());
 
-// Supabase (only if you are using it)
+/* ================= SUPABASE ================= */
+
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+  process.env.SUPABASE_URL || "",
+  process.env.SUPABASE_ANON_KEY || ""
 );
 
-// Multer
-const upload = multer({ storage: multer.memoryStorage() });
+/* ================= FILE UPLOAD ================= */
 
-// Gmail Transport
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
-// Check mail connection when server starts
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ Gmail Error:", error);
+/* ================= EMAIL ================= */
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: false, // TLS
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false,
+  },
+  connectionTimeout: 20000,
+  greetingTimeout: 20000,
+  socketTimeout: 20000,
+});
+
+/* ================= TEST EMAIL ================= */
+
+transporter.verify((err, success) => {
+  if (err) {
+    console.error("❌ SMTP Error:", err);
   } else {
-    console.log("✅ Gmail Ready");
+    console.log("✅ SMTP Ready");
   }
 });
 
-// Home test
+/* ================= ROUTES ================= */
+
 app.get("/", (req, res) => {
   res.send("EliteWear Backend Running ✅");
 });
 
-// Contact route
-app.post("/contact", async (req, res) => {
-  const { name, email, message } = req.body;
+/* ===== CONTACT FORM ===== */
 
+app.post("/contact", async (req, res) => {
   try {
+    const { name, email, message } = req.body;
+
+    if (!name || !email || !message) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing fields",
+      });
+    }
+
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER,
-      subject: "New Contact Form",
-      text: `
-Name: ${name}
-Email: ${email}
-Message: ${message}
+      from: `"EliteWear" <${process.env.SMTP_USER}>`,
+      to: process.env.SMTP_USER,
+      subject: "📩 New Contact Form",
+      html: `
+        <h3>New Contact Message</h3>
+        <p><b>Name:</b> ${name}</p>
+        <p><b>Email:</b> ${email}</p>
+        <p><b>Message:</b> ${message}</p>
       `,
     });
 
@@ -66,60 +91,68 @@ Message: ${message}
       message: "Email sent successfully ✅",
     });
   } catch (err) {
-    console.error("MAIL ERROR:", err);
+    console.error("❌ Contact Error:", err);
 
     res.status(500).json({
       success: false,
-      error: err.message,
+      error: "Connection timeout",
     });
   }
 });
 
-// Consign route
-app.post("/consign", upload.single("image"), async (req, res) => {
-  const { name, price } = req.body;
-  const file = req.file;
+/* ===== CONSIGNMENT ===== */
 
+app.post("/consign", upload.single("image"), async (req, res) => {
   try {
-    if (!file) {
-      return res.status(400).json({ error: "No file uploaded" });
+    const { name, price } = req.body;
+    const file = req.file;
+
+    if (!name || !price || !file) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing data",
+      });
     }
 
     const fileName = `${Date.now()}_${file.originalname}`;
 
-    const { error } = await supabase.storage
-      .from("products")
-      .upload(fileName, file.buffer, {
-        contentType: file.mimetype,
-      });
+    if (process.env.SUPABASE_URL) {
+      const { error } = await supabase.storage
+        .from("products")
+        .upload(fileName, file.buffer, {
+          contentType: file.mimetype,
+        });
 
-    if (error) throw error;
+      if (error) throw error;
+    }
 
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER,
-      subject: "New Consignment",
-      text: `
-Product: ${name}
-Price: ${price}
-File: ${fileName}
+      from: `"EliteWear" <${process.env.SMTP_USER}>`,
+      to: process.env.SMTP_USER,
+      subject: "📦 New Consignment",
+      html: `
+        <h3>New Product Submitted</h3>
+        <p><b>Name:</b> ${name}</p>
+        <p><b>Price:</b> ₹${price}</p>
+        <p><b>File:</b> ${fileName}</p>
       `,
     });
 
     res.json({ success: true });
   } catch (err) {
-    console.error("CONSIGN ERROR:", err);
+    console.error("❌ Consign Error:", err);
 
     res.status(500).json({
       success: false,
-      error: err.message,
+      error: "Upload failed",
     });
   }
 });
 
-// Start server
+/* ================= START ================= */
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+  console.log("🚀 Server running on port", PORT);
 });
