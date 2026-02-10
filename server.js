@@ -13,16 +13,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Supabase
+// Supabase (only if you are using it)
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
-// Multer (file upload)
+// Multer
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Email Transport
+// Gmail Transport
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -31,12 +31,21 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Test route
+// Check mail connection when server starts
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ Gmail Error:", error);
+  } else {
+    console.log("✅ Gmail Ready");
+  }
+});
+
+// Home test
 app.get("/", (req, res) => {
   res.send("EliteWear Backend Running ✅");
 });
 
-// Contact Form
+// Contact route
 app.post("/contact", async (req, res) => {
   const { name, email, message } = req.body;
 
@@ -52,20 +61,30 @@ Message: ${message}
       `,
     });
 
-    res.json({ success: true, message: "Email sent successfully ✅" });
+    res.json({
+      success: true,
+      message: "Email sent successfully ✅",
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false });
+    console.error("MAIL ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    });
   }
 });
 
-// Consignment Upload
+// Consign route
 app.post("/consign", upload.single("image"), async (req, res) => {
   const { name, price } = req.body;
   const file = req.file;
 
   try {
-    // Upload to Supabase storage
+    if (!file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
     const fileName = `${Date.now()}_${file.originalname}`;
 
     const { error } = await supabase.storage
@@ -76,7 +95,6 @@ app.post("/consign", upload.single("image"), async (req, res) => {
 
     if (error) throw error;
 
-    // Send Email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: process.env.EMAIL_USER,
@@ -90,12 +108,16 @@ File: ${fileName}
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false });
+    console.error("CONSIGN ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    });
   }
 });
 
-// Start Server
+// Start server
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
