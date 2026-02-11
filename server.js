@@ -4,7 +4,6 @@ const express = require("express");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
-const jwt = require("jsonwebtoken");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
@@ -27,24 +26,26 @@ const upload = multer({
   storage: multer.memoryStorage(),
 });
 
-/* ================= Email (SMTP) ================= */
+/* ================= Email (Brevo SMTP) ================= */
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false,
+  host: process.env.SMTP_HOST,          // smtp-relay.brevo.com
+  port: Number(process.env.SMTP_PORT),  // 587
+  secure: false,                       // must be false for 587
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.SMTP_USER,       // Brevo login
+    pass: process.env.SMTP_PASS,       // SMTP key
   },
-  connectionTimeout: 10000,
+  connectionTimeout: 20000,
+  greetingTimeout: 20000,
+  socketTimeout: 20000,
 });
 
-/* ================= Test SMTP ================= */
+/* ================= Check SMTP ================= */
 
-transporter.verify((err, success) => {
-  if (err) {
-    console.log("❌ SMTP Error:", err.message);
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ SMTP Error:", error);
   } else {
     console.log("✅ SMTP Ready");
   }
@@ -52,75 +53,60 @@ transporter.verify((err, success) => {
 
 /* ================= Routes ================= */
 
-// Home
+// Health check
 app.get("/", (req, res) => {
   res.send("EliteWear Backend Running ✅");
 });
 
-// Test Mail (IMPORTANT)
+// Test mail route
 app.get("/test-mail", async (req, res) => {
   try {
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER,
-      subject: "Test Email - EliteWear",
-      text: "If you received this, SMTP is working ✅",
+      from: `"EliteWear" <${process.env.SMTP_USER}>`,
+      to: process.env.SMTP_USER,
+      subject: "Test Mail - EliteWear",
+      text: "This is a test email from EliteWear backend.",
     });
 
-    res.json({
-      success: true,
-      message: "Test email sent successfully",
-    });
+    res.json({ success: true, message: "Test email sent ✅" });
   } catch (err) {
     console.error("Mail Error:", err);
-
-    res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Contact Form
+// Contact form
 app.post("/contact", async (req, res) => {
   const { name, email, message } = req.body;
 
   try {
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER,
+      from: `"EliteWear" <${process.env.SMTP_USER}>`,
+      to: process.env.SMTP_USER,
       subject: "New Contact Form",
       text: `
 Name: ${name}
 Email: ${email}
-Message: ${message}
+
+Message:
+${message}
       `,
     });
 
-    res.json({
-      success: true,
-      message: "Email sent successfully ✅",
-    });
+    res.json({ success: true, message: "Email sent ✅" });
   } catch (err) {
-    console.error("Contact Error:", err);
-
-    res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+    console.error("Contact Mail Error:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Consignment Upload
+// Consignment upload
 app.post("/consign", upload.single("image"), async (req, res) => {
   const { name, price } = req.body;
   const file = req.file;
 
   if (!file) {
-    return res.status(400).json({
-      success: false,
-      error: "No file uploaded",
-    });
+    return res.status(400).json({ success: false, message: "No file uploaded" });
   }
 
   try {
@@ -135,8 +121,8 @@ app.post("/consign", upload.single("image"), async (req, res) => {
     if (error) throw error;
 
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER,
+      from: `"EliteWear" <${process.env.SMTP_USER}>`,
+      to: process.env.SMTP_USER,
       subject: "New Consignment",
       text: `
 Product: ${name}
@@ -145,17 +131,10 @@ File: ${fileName}
       `,
     });
 
-    res.json({
-      success: true,
-      message: "Consignment sent successfully",
-    });
+    res.json({ success: true, message: "Consignment submitted ✅" });
   } catch (err) {
     console.error("Consign Error:", err);
-
-    res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
