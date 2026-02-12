@@ -1,113 +1,121 @@
-const container = document.getElementById("itemsContainer");
+const popup = document.getElementById("popup");
+const itemsContainer = document.getElementById("items-container");
 const form = document.getElementById("consignmentForm");
 const errorBox = document.getElementById("error-message");
 
-function createItemRow() {
-    const row = document.createElement("div");
-    row.className = "item-row";
+function openPopup() {
+  popup.style.display = "flex";
+  if (itemsContainer.children.length === 0) {
+    addNewItem();
+  }
+}
 
-    row.innerHTML = `
-        <div>
-            <label class="image-upload">+</label>
-            <input type="file" accept="image/*">
-        </div>
+function addNewItem() {
+  const item = document.createElement("div");
+  item.className = "item-row";
 
-        <div class="form-section">
-            <label>Product Name</label>
-            <input type="text" class="productName">
+  item.innerHTML = `
+    <div class="image-box">
+      +
+      <input type="file" accept="image/*">
+    </div>
+    <div class="fields">
+      <input type="text" name="names[]" placeholder="Product Name">
+      <input type="text" name="prices[]" placeholder="Product Price">
+    </div>
+  `;
 
-            <label>Product Price</label>
-            <input type="text" class="price">
-        </div>
-    `;
+  const fileInput = item.querySelector("input[type='file']");
+  const imageBox = item.querySelector(".image-box");
 
-    const fileInput = row.querySelector("input[type='file']");
-    const imageBox = row.querySelector(".image-upload");
+  imageBox.addEventListener("click", () => fileInput.click());
 
-    imageBox.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (file) {
+      const img = document.createElement("img");
+      img.className = "image-preview";
+      img.src = URL.createObjectURL(file);
+      imageBox.innerHTML = "";
+      imageBox.appendChild(img);
+      imageBox.appendChild(fileInput);
+      checkClone();
+    }
+  });
 
-    fileInput.addEventListener("change", function () {
-        const file = fileInput.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                imageBox.innerHTML = `<img src="${e.target.result}">`;
-            };
-            reader.readAsDataURL(file);
-            checkClone();
-        }
-    });
+  const inputs = item.querySelectorAll("input[type='text']");
+  inputs.forEach(input => {
+    input.addEventListener("input", checkClone);
+  });
 
-    row.querySelectorAll("input").forEach(input => {
-        input.addEventListener("input", checkClone);
-    });
-
-    container.appendChild(row);
+  itemsContainer.appendChild(item);
 }
 
 function checkClone() {
-    const rows = document.querySelectorAll(".item-row");
-    const last = rows[rows.length - 1];
+  const rows = document.querySelectorAll(".item-row");
+  const last = rows[rows.length - 1];
 
-    const file = last.querySelector("input[type='file']").files.length;
-    const name = last.querySelector(".productName").value.trim();
-    const price = last.querySelector(".price").value.trim();
+  const file = last.querySelector("input[type='file']").files.length;
+  const name = last.querySelector("input[name='names[]']").value.trim();
+  const price = last.querySelector("input[name='prices[]']").value.trim();
 
-    if (file && name && price) {
-        createItemRow();
-    }
+  if (file && name && price) {
+    addNewItem();
+  }
 }
 
 form.addEventListener("submit", async function (e) {
-    e.preventDefault();
-    errorBox.innerHTML = "";
+  e.preventDefault();
+  errorBox.innerHTML = "";
 
-    const rows = document.querySelectorAll(".item-row");
-    const formData = new FormData();
+  const rows = document.querySelectorAll(".item-row");
+  const formData = new FormData();
 
-    let valid = false;
+  let validItems = 0;
 
-    rows.forEach(row => {
-        const fileInput = row.querySelector("input[type='file']");
-        const name = row.querySelector(".productName").value.trim();
-        const price = row.querySelector(".price").value.trim();
+  for (let row of rows) {
+    const fileInput = row.querySelector("input[type='file']");
+    const nameInput = row.querySelector("input[name='names[]']");
+    const priceInput = row.querySelector("input[name='prices[]']");
 
-        if (fileInput.files.length || name || price) {
-            if (!fileInput.files.length || !name || !price) {
-                errorBox.innerHTML = "Please complete all fields for each item.";
-                valid = false;
-                return;
-            }
+    const file = fileInput.files[0];
+    const name = nameInput.value.trim();
+    const price = priceInput.value.trim();
 
-            formData.append("files", fileInput.files[0]);
-            formData.append("names[]", name);
-            formData.append("prices[]", price);
-            valid = true;
-        }
+    if (!file && !name && !price) continue;
+
+    if (!file || !name || !price) {
+      errorBox.innerHTML = "Please fill image, name and price for all items.";
+      return;
+    }
+
+    formData.append("files", file);
+    formData.append("names[]", name);
+    formData.append("prices[]", price);
+
+    validItems++;
+  }
+
+  if (validItems === 0) {
+    errorBox.innerHTML = "Add at least one item.";
+    return;
+  }
+
+  try {
+    const response = await fetch("https://elitewear.onrender.com/submit-consignment", {
+      method: "POST",
+      body: formData
     });
 
-    if (!valid) {
-        errorBox.innerHTML = "Please add at least one complete item.";
-        return;
+    const result = await response.json();
+
+    if (result.success) {
+      window.location.href = "ThankYouConsignment.html";
+    } else {
+      errorBox.innerHTML = "Submission failed.";
     }
 
-    try {
-        const response = await fetch("https://elitewear.onrender.com/submit-consignment", {
-            method: "POST",
-            body: formData
-        });
-
-        const result = await response.json();
-
-        if (!result.success) {
-            errorBox.innerHTML = "Submission failed.";
-        } else {
-            window.location.href = "ThankYouConsignment.html";
-        }
-
-    } catch {
-        errorBox.innerHTML = "Server error.";
-    }
+  } catch (err) {
+    errorBox.innerHTML = "Server error. Try again.";
+  }
 });
-
-createItemRow();
