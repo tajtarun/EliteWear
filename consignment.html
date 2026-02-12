@@ -21,6 +21,7 @@ body {
     background: #111;
     border-radius: 16px;
     box-shadow: 0 0 30px rgba(0,0,0,0.6);
+    text-align: center;
 }
 
 h1 {
@@ -32,20 +33,41 @@ h1 {
 p {
     color: #ccc;
     margin-bottom: 30px;
+    font-size: 18px;
 }
 
+/* Gold Button */
 .btn-gold {
     background: #d4af37;
     color: #000;
     border: none;
-    padding: 12px 25px;
+    padding: 14px 30px;
     border-radius: 10px;
     cursor: pointer;
     font-weight: bold;
+    font-size: 16px;
+    transition: 0.3s ease;
 }
 
 .btn-gold:hover {
-    opacity: 0.9;
+    box-shadow: 0 0 15px #d4af37,
+                0 0 30px #d4af37;
+    transform: translateY(-2px);
+}
+
+/* Grey Button */
+.btn-grey {
+    background: #444;
+    color: #fff;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.btn-grey:hover {
+    background: #666;
 }
 
 /* Modal */
@@ -53,9 +75,10 @@ p {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.85);
     justify-content: center;
     align-items: center;
+    z-index: 999;
 }
 
 .modal-content {
@@ -64,16 +87,19 @@ p {
     border-radius: 20px;
     width: 800px;
     max-width: 95%;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
 }
 
 .modal-content h2 {
     color: #d4af37;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
+/* Upload Layout */
 .upload-row {
     display: flex;
-    gap: 20px;
+    gap: 30px;
+    align-items: flex-start;
     margin-bottom: 20px;
 }
 
@@ -87,11 +113,16 @@ p {
     align-items: center;
     cursor: pointer;
     position: relative;
+    transition: 0.3s ease;
 }
 
 .upload-box span {
     font-size: 40px;
     color: #d4af37;
+}
+
+.upload-box:hover {
+    box-shadow: 0 0 15px #d4af37;
 }
 
 .upload-box input {
@@ -102,30 +133,42 @@ p {
     cursor: pointer;
 }
 
-.input-field {
+/* Input Column (Vertical Layout) */
+.input-column {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
     flex: 1;
 }
 
-.input-field input {
+.input-column input {
     width: 100%;
     padding: 15px;
     background: #222;
-    border: none;
+    border: 1px solid #333;
     border-radius: 10px;
     color: white;
+    font-size: 15px;
+    transition: 0.3s ease;
 }
 
+.input-column input:focus {
+    outline: none;
+    border: 1px solid #d4af37;
+    box-shadow: 0 0 10px rgba(212,175,55,0.5);
+}
+
+/* Actions */
 .actions {
-    margin-top: 20px;
+    margin-top: 25px;
+    display: flex;
+    gap: 15px;
 }
 
-.btn-grey {
-    background: #444;
-    color: #fff;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
+/* Status */
+#status {
+    margin-top: 15px;
+    font-size: 14px;
 }
 </style>
 </head>
@@ -133,23 +176,22 @@ p {
 
 <div class="container">
     <h1>What is Consignment?</h1>
-    <p>Consignment means you allow us to sell your item on your behalf.</p>
+    <p>Consignment means you allow us to sell your items on your behalf.</p>
     <button class="btn-gold" onclick="openModal()">Sell Your Items Here</button>
 </div>
 
 <div class="modal" id="modal">
     <div class="modal-content">
-        <h2>Upload Items</h2>
+        <h2>Upload Item</h2>
 
         <div class="upload-row">
             <div class="upload-box">
                 <span>+</span>
                 <input type="file" id="imageInput">
             </div>
-            <div class="input-field">
+
+            <div class="input-column">
                 <input type="text" id="productName" placeholder="Product Name">
-            </div>
-            <div class="input-field">
                 <input type="text" id="price" placeholder="Price ₹">
             </div>
         </div>
@@ -181,7 +223,7 @@ async function submitForm() {
     const status = document.getElementById("status");
 
     if (!file || !name || !price) {
-        status.innerHTML = "<p style='color:red'>Fill all fields.</p>";
+        status.innerHTML = "<p style='color:red'>Please fill all fields.</p>";
         return;
     }
 
@@ -201,7 +243,7 @@ async function submitForm() {
         const data = await res.json();
 
         if (data.success) {
-            status.innerHTML = "<p style='color:green'>Submitted Successfully!</p>";
+            status.innerHTML = "<p style='color:lightgreen'>Submitted Successfully!</p>";
             setTimeout(() => {
                 window.location.href = "thankyou-consignment.html";
             }, 1500);
