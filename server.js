@@ -10,11 +10,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ================= MULTER =================
+// ================= MULTER SETUP =================
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// ================= ROOT =================
+// ================= ROOT ROUTE =================
 app.get("/", (req, res) => {
   res.send("EliteWear Backend Running ✅");
 });
@@ -38,26 +38,10 @@ app.post("/contact", async (req, res) => {
         to: [{ email: process.env.RECEIVER_EMAIL }],
         subject: "✨ New Contact Message",
         htmlContent: `
-          <div style="font-family:Arial;background:#f4f4f4;padding:30px;">
-            <div style="max-width:600px;margin:auto;background:#ffffff;
-                        padding:25px;border-radius:12px;
-                        box-shadow:0 10px 25px rgba(0,0,0,0.1);">
-              
-              <h2 style="margin-top:0;border-bottom:2px solid #d4af37;
-                         padding-bottom:10px;color:#000;">
-                New Contact Message
-              </h2>
-
-              <p><strong>Name:</strong><br>${name}</p>
-              <p><strong>Email:</strong><br>${email}</p>
-              <p><strong>Message:</strong><br>${message}</p>
-
-              <hr style="margin:20px 0;">
-              <p style="font-size:12px;color:#777;">
-                Sent from EliteWear website contact form.
-              </p>
-            </div>
-          </div>
+          <h2>New Contact Message</h2>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Message:</strong><br>${message}</p>
         `,
       },
       {
@@ -81,56 +65,30 @@ app.post("/contact", async (req, res) => {
 // =============== CONSIGNMENT ROUTE ====================
 // ======================================================
 
-app.post("/submit-consignment", upload.array("files"), async (req, res) => {
+app.post("/submit-consignment", upload.single("image"), async (req, res) => {
   try {
     console.log("Consignment route hit");
 
-    const files = req.files;
-    const names = req.body["names[]"];
-    const prices = req.body["prices[]"];
+    const { productName, productPrice } = req.body;
+    const file = req.file;
 
-    if (!files || files.length === 0) {
+    if (!file || !productName || !productPrice) {
       return res.status(400).json({ success: false });
     }
 
-    const nameArray = Array.isArray(names) ? names : [names];
-    const priceArray = Array.isArray(prices) ? prices : [prices];
-
-    let htmlContent = `
-      <div style="font-family:Arial;background:#f4f4f4;padding:30px;">
-        <div style="max-width:600px;margin:auto;background:#ffffff;
-                    padding:25px;border-radius:12px;
-                    box-shadow:0 10px 25px rgba(0,0,0,0.1);">
-
-          <h2 style="margin-top:0;border-bottom:2px solid #d4af37;
-                     padding-bottom:10px;color:#000;">
-            New Consignment Submission
-          </h2>
-    `;
-
-    nameArray.forEach((name, index) => {
-      htmlContent += `
-        <p>
-          <strong>Item ${index + 1}</strong><br>
-          Name: ${name}<br>
-          Price: ₹ ${priceArray[index]}
-        </p>
-        <hr>
-      `;
-    });
-
-    htmlContent += `
-          <p style="font-size:12px;color:#777;">
-            Images attached below.
-          </p>
-        </div>
+    const htmlContent = `
+      <div style="font-family:Arial;padding:20px;">
+        <h2>New Consignment Submission</h2>
+        <p><strong>Product Name:</strong> ${productName}</p>
+        <p><strong>Product Price:</strong> ₹ ${productPrice}</p>
+        <p>Image attached below.</p>
       </div>
     `;
 
-    const attachments = files.map(file => ({
+    const attachment = [{
       content: file.buffer.toString("base64"),
       name: file.originalname
-    }));
+    }];
 
     await axios.post(
       "https://api.brevo.com/v3/smtp/email",
@@ -142,7 +100,7 @@ app.post("/submit-consignment", upload.array("files"), async (req, res) => {
         to: [{ email: process.env.RECEIVER_EMAIL }],
         subject: "📦 New Consignment Submission",
         htmlContent: htmlContent,
-        attachment: attachments,
+        attachment: attachment,
       },
       {
         headers: {
@@ -161,7 +119,7 @@ app.post("/submit-consignment", upload.array("files"), async (req, res) => {
 });
 
 
-// ================= SERVER =================
+// ================= START SERVER =================
 
 const PORT = process.env.PORT || 3000;
 
