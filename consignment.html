@@ -9,35 +9,35 @@
         body {
             margin: 0;
             padding: 0;
-            background: black;
-            color: white;
-            font-family: Arial, sans-serif;
+            background: #000;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
             text-align: center;
         }
 
         h2 {
-            margin-top: 60px;
-            font-size: 32px;
+            margin-top: 70px;
+            font-size: 36px;
+            letter-spacing: 1px;
         }
 
         p {
-            margin-bottom: 30px;
-            font-size: 18px;
+            color: #ccc;
+            margin-bottom: 40px;
         }
 
         .gold-btn {
-            background: #d4af37;
-            color: black;
-            padding: 12px 28px;
+            background: linear-gradient(145deg, #d4af37, #b8902a);
             border: none;
-            border-radius: 8px;
+            padding: 14px 35px;
+            border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
             transition: 0.3s ease;
         }
 
         .gold-btn:hover {
-            box-shadow: 0 0 25px #d4af37;
+            box-shadow: 0 0 30px #d4af37;
         }
 
         /* Modal */
@@ -45,34 +45,72 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0,0,0,0.9);
             justify-content: center;
             align-items: center;
         }
 
-        .modal-content {
-            background: #111;
-            padding: 30px;
-            width: 350px;
-            border-radius: 12px;
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+        .modal-box {
+            background: #0c0c0c;
+            padding: 40px;
+            width: 700px;
+            border-radius: 15px;
+            display: flex;
+            gap: 40px;
+            box-shadow: 0 0 30px rgba(212,175,55,0.3);
         }
 
-        .modal-content h3 {
-            margin-bottom: 20px;
+        /* LEFT IMAGE FRAME */
+        .image-upload {
+            width: 250px;
+            height: 250px;
+            border: 2px dashed #d4af37;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 60px;
+            color: #d4af37;
+            transition: 0.3s;
         }
 
-        input {
+        .image-upload:hover {
+            box-shadow: 0 0 20px #d4af37;
+        }
+
+        .image-upload img {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 18px;
-            background: #222;
-            border: 1px solid #333;
-            border-radius: 6px;
-            color: white;
+            height: 100%;
+            object-fit: cover;
         }
 
-        input:focus {
+        input[type="file"] {
+            display: none;
+        }
+
+        /* RIGHT SIDE */
+        .form-section {
+            flex: 1;
+            text-align: left;
+        }
+
+        .form-section label {
+            display: block;
+            margin-bottom: 8px;
+            color: #d4af37;
+        }
+
+        .form-section input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 25px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: white;
+            border-radius: 6px;
+        }
+
+        .form-section input:focus {
             outline: none;
             border: 1px solid #d4af37;
         }
@@ -80,7 +118,6 @@
         #error-message {
             color: red;
             margin-bottom: 15px;
-            font-size: 14px;
         }
     </style>
 </head>
@@ -93,20 +130,29 @@
 <button class="gold-btn" onclick="openModal()">Sell Your Items Here</button>
 
 <div class="modal" id="modal">
-    <div class="modal-content">
-        <h3>Upload Item</h3>
+    <div class="modal-box">
 
-        <form id="consignmentForm">
-            <div id="error-message"></div>
+        <!-- LEFT IMAGE FRAME -->
+        <div>
+            <label class="image-upload" for="fileInput" id="imageBox">+</label>
+            <input type="file" id="fileInput" name="files" accept="image/*">
+        </div>
 
-            <input type="file" name="files">
+        <!-- RIGHT FORM -->
+        <div class="form-section">
+            <form id="consignmentForm">
+                <div id="error-message"></div>
 
-            <input type="text" name="productName" placeholder="Product Name">
+                <label>Product Name</label>
+                <input type="text" name="productName">
 
-            <input type="text" name="price" placeholder="Price ₹">
+                <label>Product Price</label>
+                <input type="text" name="price">
 
-            <button type="submit" class="gold-btn">Submit All</button>
-        </form>
+                <button type="submit" class="gold-btn">Submit All</button>
+            </form>
+        </div>
+
     </div>
 </div>
 
