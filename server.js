@@ -43,12 +43,50 @@ app.post("/contact", async (req, res) => {
 
         subject: "New Contact Form Message",
 
-        htmlContent: `
-          <h3>New Message</h3>
-          <p><b>Name:</b> ${name}</p>
-          <p><b>Email:</b> ${email}</p>
-          <p><b>Message:</b> ${message}</p>
-        `,
+       subject: "New Contact Message",
+
+htmlContent: `
+  <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:40px;">
+    <div style="
+        max-width:600px;
+        margin:auto;
+        background:#ffffff;
+        border-radius:12px;
+        padding:30px;
+        box-shadow:0 10px 25px rgba(0,0,0,0.1);
+    ">
+      <h2 style="
+          margin-top:0;
+          color:#000;
+          border-bottom:2px solid #d4af37;
+          padding-bottom:10px;
+      ">
+        ✨ New Contact Message
+      </h2>
+
+      <p style="font-size:16px;">
+        <strong>Name:</strong><br>
+        ${name}
+      </p>
+
+      <p style="font-size:16px;">
+        <strong>Email:</strong><br>
+        ${email}
+      </p>
+
+      <p style="font-size:16px;">
+        <strong>Message:</strong><br>
+        ${message}
+      </p>
+
+      <hr style="margin:25px 0;">
+
+      <p style="font-size:13px; color:#777;">
+        This message was sent from your EliteWear website contact form.
+      </p>
+    </div>
+  </div>
+`,
       },
       {
         headers: {
