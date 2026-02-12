@@ -1,52 +1,106 @@
-document.getElementById("submitAll").onclick = async () => {
-  statusBox.innerHTML = "";
-  const rows = [...rowsContainer.children];
-  const fd = new FormData();
-  let valid = false;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Consignment - EliteWear</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
 
-  rows.forEach(row => {
-    const file = row.querySelector("input[type=file]").files[0];
-    const name = row.querySelector("input[placeholder='Product Name']").value.trim();
-    const price = row.querySelector("input[placeholder='Price ₹']").value.trim();
+<body>
 
-    if (file && name && price) {
-      fd.append("files", file);
-      fd.append("names[]", name);
-      fd.append("prices[]", price);
-      valid = true;
-    }
-  });
+  <h1>Sell Your Items Here</h1>
 
-  if (!valid) {
-    statusBox.innerHTML = `<div class="status error">Please fill at least one complete item.</div>`;
-    return;
-  }
+  <div id="rowsContainer">
+    <div class="row">
+      <input type="file" accept="image/*" />
+      <input type="text" placeholder="Product Name" />
+      <input type="text" placeholder="Price ₹" />
+    </div>
+  </div>
 
-  statusBox.innerHTML = `<div class="status">Sending...</div>`;
+  <br>
 
-  try {
-    const res = await fetch(ENDPOINT, {
-      method: "POST",
-      body: fd
-    });
+  <button id="addMore">Add More</button>
+  <button id="submitAll">Submit All</button>
 
-    console.log("Response status:", res.status);
+  <div id="statusBox" style="margin-top:15px;"></div>
 
-    if (!res.ok) {
-      throw new Error("Server responded with error");
-    }
+  <!-- ================= SCRIPT SECTION ================= -->
 
-    const data = await res.json();
-    console.log("Response data:", data);
+  <script>
+    const ENDPOINT = "https://elitewear.onrender.com/submit-consignment";
 
-    if (data.success) {
-      window.location.href = "thankyou-consignment.html";
-    } else {
-      throw new Error("Email failed");
-    }
+    const rowsContainer = document.getElementById("rowsContainer");
+    const statusBox = document.getElementById("statusBox");
+    const addMoreBtn = document.getElementById("addMore");
+    const submitBtn = document.getElementById("submitAll");
 
-  } catch (error) {
-    console.error("Submission error:", error);
-    statusBox.innerHTML = `<div class="status error">Submission failed. Check console.</div>`;
-  }
-};
+    // Add More Items
+    addMoreBtn.onclick = () => {
+      const div = document.createElement("div");
+      div.className = "row";
+      div.innerHTML = `
+        <input type="file" accept="image/*" />
+        <input type="text" placeholder="Product Name" />
+        <input type="text" placeholder="Price ₹" />
+      `;
+      rowsContainer.appendChild(div);
+    };
+
+    // Submit All Items
+    submitBtn.onclick = async () => {
+      statusBox.innerHTML = "";
+      const rows = [...rowsContainer.children];
+      const fd = new FormData();
+      let valid = false;
+
+      rows.forEach(row => {
+        const file = row.querySelector("input[type=file]").files[0];
+        const name = row.querySelector("input[placeholder='Product Name']").value.trim();
+        const price = row.querySelector("input[placeholder='Price ₹']").value.trim();
+
+        if (file && name && price) {
+          fd.append("files", file);
+          fd.append("names[]", name);
+          fd.append("prices[]", price);
+          valid = true;
+        }
+      });
+
+      if (!valid) {
+        statusBox.innerHTML = "Please fill at least one complete item.";
+        return;
+      }
+
+      statusBox.innerHTML = "Sending...";
+
+      try {
+        const res = await fetch(ENDPOINT, {
+          method: "POST",
+          body: fd
+        });
+
+        console.log("Response status:", res.status);
+
+        if (!res.ok) {
+          throw new Error("Server responded with error");
+        }
+
+        const data = await res.json();
+        console.log("Response data:", data);
+
+        if (data.success) {
+          window.location.href = "thankyou-consignment.html";
+        } else {
+          throw new Error("Email failed");
+        }
+
+      } catch (error) {
+        console.error("Submission error:", error);
+        statusBox.innerHTML = "Submission failed. Check console.";
+      }
+    };
+  </script>
+
+</body>
+</html>
