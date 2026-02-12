@@ -1,91 +1,190 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Contact - EliteWear</title>
+<meta charset="UTF-8">
+<title>EliteWear — Contact</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
 
-  <style>
-    body {
-      font-family: Arial;
-      background: #111;
-      color: white;
-      text-align: center;
-      padding: 40px;
-    }
+<style>
+:root{
+  --gold:#d4af37;
+  --gold-light:#f3e0a8;
+  --bg:#0b0b0c;
+}
 
-    input, textarea, button {
-      width: 90%;
-      max-width: 350px;
-      padding: 10px;
-      margin: 10px;
-    }
+body{
+  margin:0;
+  background:linear-gradient(135deg,#0b0b0c,#111);
+  font-family:'Poppins',sans-serif;
+  color:#fff;
+  overflow-x:hidden;
+}
 
-    button {
-      background: gold;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-    }
-  </style>
+/* Luxury glow background */
+body::before{
+  content:'';
+  position:fixed;
+  width:500px;
+  height:500px;
+  background:radial-gradient(circle,var(--gold),transparent 70%);
+  top:-150px;
+  right:-150px;
+  opacity:0.08;
+  animation:float 8s ease-in-out infinite alternate;
+}
+@keyframes float{
+  from{transform:translateY(0px);}
+  to{transform:translateY(40px);}
+}
+
+.container{
+  max-width:600px;
+  margin:80px auto;
+  padding:40px;
+  border-radius:22px;
+  background:rgba(20,20,20,0.85);
+  backdrop-filter:blur(12px);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.8),
+    0 0 25px rgba(212,175,55,0.08);
+  animation:fadeUp 0.8s ease;
+}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(30px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+h1{
+  margin:0 0 20px;
+  font-size:32px;
+  font-weight:800;
+  background:linear-gradient(90deg,var(--gold),var(--gold-light));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+p{
+  color:#bbb;
+  margin-bottom:25px;
+}
+
+form{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+
+input, textarea{
+  padding:14px 16px;
+  border-radius:12px;
+  border:1px solid #2a2a2a;
+  background:#111;
+  color:#fff;
+  font-size:14px;
+  transition:all 0.3s ease;
+}
+
+input:focus, textarea:focus{
+  outline:none;
+  border:1px solid var(--gold);
+  box-shadow:0 0 12px rgba(212,175,55,0.4);
+  transform:scale(1.02);
+}
+
+textarea{
+  resize:none;
+  height:120px;
+}
+
+button{
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  font-weight:700;
+  cursor:pointer;
+  background:linear-gradient(90deg,var(--gold),var(--gold-light));
+  color:#000;
+  transition:all 0.3s ease;
+  box-shadow:0 8px 20px rgba(212,175,55,0.4);
+}
+
+button:hover{
+  transform:translateY(-3px);
+  box-shadow:0 14px 30px rgba(212,175,55,0.6);
+}
+
+.status{
+  margin-top:10px;
+  font-size:14px;
+  color:#aaa;
+  min-height:18px;
+}
+
+.footer{
+  text-align:center;
+  margin-top:60px;
+  color:#777;
+  font-size:14px;
+}
+</style>
 </head>
 
 <body>
 
-<h2>Contact Us</h2>
+<div class="container">
+  <h1>Contact EliteWear</h1>
+  <p>Have a question or business inquiry? Send us a message below.</p>
 
-<form id="contactForm">
+  <form id="contactForm">
+    <input type="text" id="name" placeholder="Your Name" required>
+    <input type="email" id="email" placeholder="Your Email" required>
+    <textarea id="message" placeholder="Your Message" required></textarea>
+    <button type="submit">Send Message</button>
+    <div class="status" id="status"></div>
+  </form>
+</div>
 
-  <input id="name" placeholder="Name" required><br>
-
-  <input id="email" type="email" placeholder="Email" required><br>
-
-  <textarea id="message" placeholder="Message" required></textarea><br>
-
-  <button type="submit">Send</button>
-
-</form>
+<div class="footer">
+  © EliteWear — Crafted with care.<br>
+  — MADE BY TARUN —
+</div>
 
 <script>
+const form = document.getElementById("contactForm");
+const statusDiv = document.getElementById("status");
 
-const API_URL = "https://elitewear-backend.onrender.com/api";
-
-document.getElementById("contactForm").addEventListener("submit", async (e) => {
-
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
+
+  statusDiv.textContent = "Sending message...";
 
   const name = document.getElementById("name").value;
   const email = document.getElementById("email").value;
   const message = document.getElementById("message").value;
 
   try {
-
-    const res = await fetch(`${API_URL}/contact`, {
+    const res = await fetch("https://elitewear.onrender.com/contact", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        name,
-        email,
-        message
-      })
+      body: JSON.stringify({ name, email, message })
     });
 
     const data = await res.json();
 
-    if (data.success) {
-      alert("Message sent!");
-      document.getElementById("contactForm").reset();
+    if(data.success){
+      statusDiv.textContent = "Message sent successfully ✔";
+      form.reset();
     } else {
-      alert("Failed to send");
+      statusDiv.textContent = "Failed to send message.";
     }
 
-  } catch {
-    alert("Server error");
+  } catch (err) {
+    statusDiv.textContent = "Server error. Try again.";
   }
-
 });
-
 </script>
 
 </body>
