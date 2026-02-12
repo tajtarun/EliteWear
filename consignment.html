@@ -52,7 +52,7 @@ button{cursor:pointer;font-family:'Poppins';}
 </div>
 
 <script>
-const ENDPOINT = "https://elitewear-backend.onrender.com/submit-consignment";
+const ENDPOINT = "https://elitewear.onrender.com/sell-item";
 
 const popupBg = document.getElementById("popupBg");
 const rowsContainer = document.getElementById("rowsContainer");
@@ -106,7 +106,6 @@ function createRow() {
   priceInput.type = "number";
 
   fields.append(nameInput, priceInput);
-
   row.append(left, fields);
   rowsContainer.appendChild(row);
 }
@@ -123,37 +122,40 @@ document.getElementById("closePopup").onclick = () => popupBg.style.display = "n
 document.getElementById("submitAll").onclick = async () => {
   statusBox.innerHTML = "";
   const rows = [...rowsContainer.children];
-  const fd = new FormData();
-  let valid = false;
 
-  rows.forEach(row => {
+  let atLeastOne = false;
+
+  for (let row of rows) {
     const file = row.querySelector("input[type=file]").files[0];
     const name = row.querySelector("input[placeholder='Product Name']").value.trim();
     const price = row.querySelector("input[placeholder='Price ₹']").value.trim();
 
     if (file && name && price) {
-      fd.append("files", file);
-      fd.append("names[]", name);
-      fd.append("prices[]", price);
-      valid = true;
-    }
-  });
+      atLeastOne = true;
 
-  if (!valid) {
+      const fd = new FormData();
+      fd.append("image", file);
+      fd.append("productName", name);
+      fd.append("productPrice", price);
+
+      try {
+        await fetch(ENDPOINT, {
+          method: "POST",
+          body: fd
+        });
+      } catch {
+        statusBox.innerHTML = `<div class="status error">Submission failed.</div>`;
+        return;
+      }
+    }
+  }
+
+  if (!atLeastOne) {
     statusBox.innerHTML = `<div class="status error">Please fill at least one complete item.</div>`;
     return;
   }
 
-  statusBox.innerHTML = `<div class="status">Sending...</div>`;
-
-  try {
-    const res = await fetch(ENDPOINT, { method: "POST", body: fd });
-    const data = await res.json();
-    if (data.success) window.location.href = "thankyou-consignment.html";
-    else throw new Error();
-  } catch {
-    statusBox.innerHTML = `<div class="status error">Submission failed.</div>`;
-  }
+  window.location.href = "thankyou-consignment.html";
 };
 </script>
 
