@@ -1,163 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>EliteWear — Consignment</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-<style>
-/* ⚠ CSS UNCHANGED */
-:root { --bg:#0b0b0c; --card:#111; --gold:#d4af37; --gold-soft:#f1d675; --muted:#bfb8ad; }
-*{box-sizing:border-box;}
-body{margin:0;background:#0b0b0c;font-family:'Poppins';color:#eee;}
-.container{max-width:900px;margin:40px auto;background:#111;padding:30px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.6);}
-h1{color:var(--gold);margin:0 0 10px;}
-p{color:var(--muted);line-height:1.6;}
-button{cursor:pointer;font-family:'Poppins';}
-.sell-btn{background:var(--gold);color:#111;padding:12px 20px;font-weight:700;border:none;border-radius:10px;margin-top:20px;}
-.popup-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);justify-content:center;align-items:center;z-index:1000;}
-.popup{width:95%;max-width:1050px;background:#111;padding:20px;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,0.7);}
-.row{display:flex;gap:18px;background:#0e0e0e;padding:15px;border-radius:12px;margin-bottom:14px;}
-.left{width:140px;height:140px;border:2px dashed rgba(212,175,55,0.25);border-radius:12px;background:#0b0b0b;display:flex;justify-content:center;align-items:center;cursor:pointer;position:relative;overflow:hidden;}
-.left img{width:100%;height:100%;object-fit:cover;display:none;}
-.plus{color:var(--gold);font-size:40px;font-weight:700;}
-.index-badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.5);padding:4px 8px;border-radius:8px;color:var(--gold);font-size:13px;}
-.fields{display:flex;gap:12px;}
-.fields input{padding:10px;border:none;border-radius:8px;background:#222;color:#eee;flex:1;}
-.remove-row{margin-top:10px;background:#333;padding:8px 12px;border:none;color:#eee;border-radius:8px;}
-.submit-btn{background:var(--gold);color:#111;padding:12px 20px;border:none;border-radius:10px;font-weight:700;margin-top:14px;}
-.status{margin-top:12px;padding:10px;border-radius:8px;}
-.status.success{background:rgba(212,175,55,0.1);color:var(--gold);}
-.status.error{background:rgba(255,0,0,0.1);color:#ff6b6b;}
-</style>
-</head>
-
-<body>
-
-<div class="container">
-  <h1>What is Consignment?</h1>
-  <p>Consignment means you allow us to sell your item on your behalf.</p>
-  <button class="sell-btn" id="openUploader">Sell Your Items Here</button>
-</div>
-
-<div class="popup-bg" id="popupBg">
-  <div class="popup">
-    <h1 style="color:var(--gold);">Upload Items</h1>
-    <div id="rowsContainer"></div>
-    <button class="submit-btn" id="submitAll">Submit All</button>
-    <div id="statusBox"></div>
-    <button class="remove-row" id="closePopup">Close</button>
-  </div>
-</div>
-
-<script>
-const ENDPOINT = "https://elitewear.onrender.com/submit-consignment"
-
-const popupBg = document.getElementById("popupBg");
-const rowsContainer = document.getElementById("rowsContainer");
-const statusBox = document.getElementById("statusBox");
-
-let rowCount = 0;
-
-function createRow() {
-  rowCount++;
-  const row = document.createElement("div");
-  row.className = "row";
-
-  const left = document.createElement("div");
-  left.className = "left";
-
-  const img = document.createElement("img");
-  const plus = document.createElement("div");
-  plus.className = "plus";
-  plus.textContent = "+";
-
-  const badge = document.createElement("div");
-  badge.className = "index-badge";
-  badge.textContent = "Item " + rowCount;
-
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = "image/*";
-  fileInput.hidden = true;
-
-  left.append(badge, plus, img, fileInput);
-  left.onclick = () => fileInput.click();
-
-  fileInput.onchange = () => {
-    if (fileInput.files[0]) {
-      img.src = URL.createObjectURL(fileInput.files[0]);
-      img.style.display = "block";
-      plus.style.display = "none";
-      left.style.border = "2px solid var(--gold)";
-      if (row === rowsContainer.lastElementChild) createRow();
-    }
-  };
-
-  const fields = document.createElement("div");
-  fields.className = "fields";
-
-  const nameInput = document.createElement("input");
-  nameInput.placeholder = "Product Name";
-
-  const priceInput = document.createElement("input");
-  priceInput.placeholder = "Price ₹";
-  priceInput.type = "number";
-
-  fields.append(nameInput, priceInput);
-  row.append(left, fields);
-  rowsContainer.appendChild(row);
-}
-
-document.getElementById("openUploader").onclick = () => {
-  popupBg.style.display = "flex";
-  rowsContainer.innerHTML = "";
-  rowCount = 0;
-  createRow();
-};
-
-document.getElementById("closePopup").onclick = () => popupBg.style.display = "none";
-
 document.getElementById("submitAll").onclick = async () => {
   statusBox.innerHTML = "";
   const rows = [...rowsContainer.children];
+  const fd = new FormData();
+  let valid = false;
 
-  let atLeastOne = false;
-
-  for (let row of rows) {
+  rows.forEach(row => {
     const file = row.querySelector("input[type=file]").files[0];
     const name = row.querySelector("input[placeholder='Product Name']").value.trim();
     const price = row.querySelector("input[placeholder='Price ₹']").value.trim();
 
     if (file && name && price) {
-      atLeastOne = true;
-
-      const fd = new FormData();
-      fd.append("image", file);
-      fd.append("productName", name);
-      fd.append("productPrice", price);
-
-      try {
-        await fetch(ENDPOINT, {
-          method: "POST",
-          body: fd
-        });
-      } catch {
-        statusBox.innerHTML = `<div class="status error">Submission failed.</div>`;
-        return;
-      }
+      fd.append("files", file);
+      fd.append("names[]", name);
+      fd.append("prices[]", price);
+      valid = true;
     }
-  }
+  });
 
-  if (!atLeastOne) {
+  if (!valid) {
     statusBox.innerHTML = `<div class="status error">Please fill at least one complete item.</div>`;
     return;
   }
 
-  window.location.href = "thankyou-consignment.html";
-};
-</script>
+  statusBox.innerHTML = `<div class="status">Sending...</div>`;
 
-</body>
-</html>
+  try {
+    const res = await fetch(ENDPOINT, {
+      method: "POST",
+      body: fd
+    });
+
+    console.log("Response status:", res.status);
+
+    if (!res.ok) {
+      throw new Error("Server responded with error");
+    }
+
+    const data = await res.json();
+    console.log("Response data:", data);
+
+    if (data.success) {
+      window.location.href = "thankyou-consignment.html";
+    } else {
+      throw new Error("Email failed");
+    }
+
+  } catch (error) {
+    console.error("Submission error:", error);
+    statusBox.innerHTML = `<div class="status error">Submission failed. Check console.</div>`;
+  }
+};
