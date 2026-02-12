@@ -10,23 +10,31 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ================= MULTER SETUP =================
+
+// ================== MULTER ==================
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// ================= ROOT ROUTE =================
+
+// ================== ROOT ROUTE ==================
+
 app.get("/", (req, res) => {
   res.send("EliteWear Backend Running ✅");
 });
 
 
 // ======================================================
-// ================= CONTACT ROUTE ======================
+// ================== CONTACT ROUTE =====================
 // ======================================================
 
 app.post("/contact", async (req, res) => {
   try {
     const { name, email, message } = req.body;
+
+    if (!name || !email || !message) {
+      return res.status(400).json({ success: false });
+    }
 
     await axios.post(
       "https://api.brevo.com/v3/smtp/email",
@@ -38,10 +46,12 @@ app.post("/contact", async (req, res) => {
         to: [{ email: process.env.RECEIVER_EMAIL }],
         subject: "✨ New Contact Message",
         htmlContent: `
-          <h2>New Contact Message</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Message:</strong><br>${message}</p>
+          <div style="font-family:Arial;padding:20px;">
+            <h2>New Contact Message</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Message:</strong><br>${message}</p>
+          </div>
         `,
       },
       {
@@ -62,33 +72,44 @@ app.post("/contact", async (req, res) => {
 
 
 // ======================================================
-// =============== CONSIGNMENT ROUTE ====================
+// ============ CONSIGNMENT (MULTI-ITEM) ROUTE =========
 // ======================================================
 
-app.post("/submit-consignment", upload.single("image"), async (req, res) => {
+app.post("/submit-consignment", upload.array("files"), async (req, res) => {
   try {
     console.log("Consignment route hit");
 
-    const { productName, productPrice } = req.body;
-    const file = req.file;
+    const files = req.files;
+    const names = req.body["names[]"];
+    const prices = req.body["prices[]"];
 
-    if (!file || !productName || !productPrice) {
+    if (!files || !names || !prices) {
       return res.status(400).json({ success: false });
     }
 
-    const htmlContent = `
+    const nameArray = Array.isArray(names) ? names : [names];
+    const priceArray = Array.isArray(prices) ? prices : [prices];
+
+    let htmlContent = `
       <div style="font-family:Arial;padding:20px;">
         <h2>New Consignment Submission</h2>
-        <p><strong>Product Name:</strong> ${productName}</p>
-        <p><strong>Product Price:</strong> ₹ ${productPrice}</p>
-        <p>Image attached below.</p>
-      </div>
     `;
 
-    const attachment = [{
+    nameArray.forEach((name, index) => {
+      htmlContent += `
+        <p><strong>Product ${index + 1}</strong></p>
+        <p>Name: ${name}</p>
+        <p>Price: ₹ ${priceArray[index]}</p>
+        <hr/>
+      `;
+    });
+
+    htmlContent += `</div>`;
+
+    const attachments = files.map(file => ({
       content: file.buffer.toString("base64"),
       name: file.originalname
-    }];
+    }));
 
     await axios.post(
       "https://api.brevo.com/v3/smtp/email",
@@ -100,7 +121,7 @@ app.post("/submit-consignment", upload.single("image"), async (req, res) => {
         to: [{ email: process.env.RECEIVER_EMAIL }],
         subject: "📦 New Consignment Submission",
         htmlContent: htmlContent,
-        attachment: attachment,
+        attachment: attachments,
       },
       {
         headers: {
@@ -119,7 +140,7 @@ app.post("/submit-consignment", upload.single("image"), async (req, res) => {
 });
 
 
-// ================= START SERVER =================
+// ================== START SERVER ==================
 
 const PORT = process.env.PORT || 3000;
 
