@@ -8,7 +8,6 @@
     <style>
         body {
             margin: 0;
-            padding: 0;
             background: #000;
             color: #fff;
             font-family: 'Segoe UI', sans-serif;
@@ -18,29 +17,27 @@
         h2 {
             margin-top: 70px;
             font-size: 36px;
-            letter-spacing: 1px;
         }
 
         p {
-            color: #ccc;
+            color: #bbb;
             margin-bottom: 40px;
         }
 
         .gold-btn {
-            background: linear-gradient(145deg, #d4af37, #b8902a);
+            background: linear-gradient(145deg,#d4af37,#b8902a);
             border: none;
             padding: 14px 35px;
             border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.3s ease;
+            transition: 0.3s;
         }
 
         .gold-btn:hover {
             box-shadow: 0 0 30px #d4af37;
         }
 
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -48,28 +45,45 @@
             background: rgba(0,0,0,0.9);
             justify-content: center;
             align-items: center;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity:0 }
+            to { opacity:1 }
         }
 
         .modal-box {
             background: #0c0c0c;
             padding: 40px;
-            width: 700px;
+            width: 850px;
             border-radius: 15px;
-            display: flex;
-            gap: 40px;
-            box-shadow: 0 0 30px rgba(212,175,55,0.3);
+            box-shadow: 0 0 40px rgba(212,175,55,0.3);
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
-        /* LEFT IMAGE FRAME */
+        .item-row {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 40px;
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity:0 }
+            to { transform: translateY(0); opacity:1 }
+        }
+
         .image-upload {
-            width: 250px;
-            height: 250px;
+            width: 200px;
+            height: 200px;
             border: 2px dashed #d4af37;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            font-size: 60px;
+            font-size: 50px;
             color: #d4af37;
             transition: 0.3s;
         }
@@ -88,36 +102,28 @@
             display: none;
         }
 
-        /* RIGHT SIDE */
         .form-section {
             flex: 1;
             text-align: left;
         }
 
         .form-section label {
-            display: block;
-            margin-bottom: 8px;
             color: #d4af37;
         }
 
         .form-section input {
             width: 100%;
             padding: 12px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             background: #1a1a1a;
             border: 1px solid #333;
             color: white;
             border-radius: 6px;
         }
 
-        .form-section input:focus {
-            outline: none;
-            border: 1px solid #d4af37;
-        }
-
         #error-message {
             color: red;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -132,26 +138,11 @@
 <div class="modal" id="modal">
     <div class="modal-box">
 
-        <!-- LEFT IMAGE FRAME -->
-        <div>
-            <label class="image-upload" for="fileInput" id="imageBox">+</label>
-            <input type="file" id="fileInput" name="files" accept="image/*">
-        </div>
-
-        <!-- RIGHT FORM -->
-        <div class="form-section">
-            <form id="consignmentForm">
-                <div id="error-message"></div>
-
-                <label>Product Name</label>
-                <input type="text" name="productName">
-
-                <label>Product Price</label>
-                <input type="text" name="price">
-
-                <button type="submit" class="gold-btn">Submit All</button>
-            </form>
-        </div>
+        <form id="consignmentForm">
+            <div id="error-message"></div>
+            <div id="itemsContainer"></div>
+            <button type="submit" class="gold-btn">Submit All</button>
+        </form>
 
     </div>
 </div>
