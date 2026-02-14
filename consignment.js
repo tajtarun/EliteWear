@@ -110,7 +110,7 @@ form.addEventListener("submit", async function (e) {
     const result = await response.json();
 
     if (result.success) {
-      window.location.href = "ThankYouConsignment.html";
+      window.location.href = "thankyou-consignment.html";
     } else {
       errorBox.innerHTML = "Submission failed.";
     }
