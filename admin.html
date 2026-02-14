@@ -1,171 +1,112 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>Admin Panel</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin Panel — EliteWear</title>
 
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #000000, #111111);
-            color: gold;
-        }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        .header {
-            text-align: center;
-            padding: 30px;
-            font-size: 32px;
-            font-weight: bold;
-            letter-spacing: 3px;
-            border-bottom: 1px solid gold;
-        }
-
-        .nav {
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .nav button {
-            background: transparent;
-            border: 1px solid gold;
-            color: gold;
-            padding: 8px 20px;
-            margin: 5px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .nav button:hover {
-            background: gold;
-            color: black;
-        }
-
-        .container {
-            display: flex;
-            justify-content: center;
-            gap: 60px;
-            padding: 50px;
-            animation: fadeIn 1s ease-in-out;
-        }
-
-        .image-box {
-            width: 250px;
-            height: 250px;
-            border: 2px dashed gold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            transition: 0.3s;
-        }
-
-        .image-box:hover {
-            background: rgba(255, 215, 0, 0.1);
-        }
-
-        .image-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .plus {
-            font-size: 50px;
-        }
-
-        .form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .form input {
-            padding: 10px;
-            background: black;
-            border: 1px solid gold;
-            color: gold;
-        }
-
-        .form button {
-            padding: 10px;
-            background: gold;
-            color: black;
-            border: none;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .form button:hover {
-            background: #c9a227;
-        }
-
-        @keyframes fadeIn {
-            from {opacity: 0; transform: translateY(20px);}
-            to {opacity: 1; transform: translateY(0);}
-        }
-
-    </style>
+<style>
+body{
+  font-family:'Poppins',sans-serif;
+  background:#0b0b0c;
+  color:#fff;
+  padding:40px;
+}
+input{
+  display:block;
+  margin-bottom:15px;
+  padding:10px;
+  width:300px;
+}
+button{
+  padding:10px 20px;
+  cursor:pointer;
+}
+</style>
 </head>
-
 <body>
 
-<div class="header">ADMIN PANEL</div>
+<h2>Add Product</h2>
 
-<div class="nav">
-    <button onclick="showProduct()">Product</button>
-    <button onclick="showShirt()">Shirt</button>
-</div>
+<input type="text" id="productName" placeholder="Product Name">
+<input type="number" id="productPrice" placeholder="Product Price">
+<input type="file" id="productImage">
+<button onclick="addProduct()">Upload Product</button>
 
-<div class="container">
-
-    <div class="image-box" onclick="document.getElementById('imageInput').click()">
-        <span class="plus" id="plusIcon">+</span>
-        <img id="previewImage" style="display:none;">
-        <input type="file" id="imageInput" accept="image/*" style="display:none;">
-    </div>
-
-    <div class="form">
-        <input type="text" id="name" placeholder="Product Name">
-        <input type="number" id="price" placeholder="Product Price">
-        <input type="text" id="size" placeholder="Size (Only for Shirt)">
-        <button onclick="submitData()">Upload</button>
-    </div>
-
-</div>
+<p id="status"></p>
 
 <script>
 
-    // IMAGE PREVIEW FIX
-    const imageInput = document.getElementById("imageInput");
-    const previewImage = document.getElementById("previewImage");
-    const plusIcon = document.getElementById("plusIcon");
+/* 🔴 PASTE YOUR VALUES HERE */
+const supabaseUrl = "https://vxcoanhvcglxbpxsvsxv.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Y29hbmh2Y2dseGJweHN2c3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MTk4NjgsImV4cCI6MjA4MzE5NTg2OH0.RIx4Yfy74CWWr7vvoh2R5CcFn9Mz6oTw3nsNWkzuRTw";
 
-    imageInput.addEventListener("change", function () {
-        const file = this.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function () {
-                previewImage.src = reader.result;
-                previewImage.style.display = "block";
-                plusIcon.style.display = "none";
-            }
-            reader.readAsDataURL(file);
-        }
-    });
+const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    function showProduct() {
-        document.getElementById("size").style.display = "none";
-    }
+async function addProduct() {
 
-    function showShirt() {
-        document.getElementById("size").style.display = "block";
-    }
+  const name = document.getElementById("productName").value.trim();
+  const price = document.getElementById("productPrice").value.trim();
+  const file = document.getElementById("productImage").files[0];
+  const status = document.getElementById("status");
 
-    function submitData() {
-        alert("Now connect this to Supabase insert function.");
-    }
+  if (!name || !price || !file) {
+    status.innerText = "Fill all fields.";
+    return;
+  }
+
+  status.innerText = "Uploading image...";
+
+  const fileName = Date.now() + "_" + file.name;
+
+  // 1️⃣ Upload image to bucket
+  const { error: uploadError } = await sb
+    .storage
+    .from("products")
+    .upload(fileName, file);
+
+  if (uploadError) {
+    console.error(uploadError);
+    status.innerText = "Image upload failed.";
+    return;
+  }
+
+  // 2️⃣ Get public URL
+  const { data } = sb
+    .storage
+    .from("products")
+    .getPublicUrl(fileName);
+
+  const imageUrl = data.publicUrl;
+
+  // 3️⃣ Insert into database
+  status.innerText = "Saving product...";
+
+  const { error: insertError } = await sb
+    .from("products")
+    .insert([
+      {
+        product_name: name,
+        product_price: price,
+        image_url: imageUrl
+      }
+    ]);
+
+  if (insertError) {
+    console.error(insertError);
+    status.innerText = "Database insert failed.";
+    return;
+  }
+
+  status.innerText = "Product added successfully!";
+
+  // Clear form
+  document.getElementById("productName").value = "";
+  document.getElementById("productPrice").value = "";
+  document.getElementById("productImage").value = "";
+}
 
 </script>
 
