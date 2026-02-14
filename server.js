@@ -80,15 +80,42 @@ app.post("/submit-consignment", upload.array("files"), async (req, res) => {
     console.log("Consignment route hit");
 
     const files = req.files;
-    const names = req.body["names[]"];
-    const prices = req.body["prices[]"];
 
-    if (!files || !names || !prices) {
-      return res.status(400).json({ success: false });
+    // Accept both names[] and names (for safety)
+    const names = req.body["names[]"] || req.body.names;
+    const prices = req.body["prices[]"] || req.body.prices;
+
+    console.log("BODY:", req.body);
+    console.log("FILES COUNT:", files?.length);
+
+    // ===== VALIDATION =====
+
+    if (!files || files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No files uploaded"
+      });
     }
 
+    if (!names || !prices) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing product names or prices"
+      });
+    }
+
+    // Normalize to arrays
     const nameArray = Array.isArray(names) ? names : [names];
     const priceArray = Array.isArray(prices) ? prices : [prices];
+
+    if (nameArray.length !== priceArray.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Mismatch between names and prices"
+      });
+    }
+
+    // ===== BUILD EMAIL CONTENT =====
 
     let htmlContent = `
       <div style="font-family:Arial;padding:20px;">
@@ -111,6 +138,8 @@ app.post("/submit-consignment", upload.array("files"), async (req, res) => {
       name: file.originalname
     }));
 
+    // ===== SEND TO BREVO =====
+
     await axios.post(
       "https://api.brevo.com/v3/smtp/email",
       {
@@ -131,11 +160,20 @@ app.post("/submit-consignment", upload.array("files"), async (req, res) => {
       }
     );
 
+    console.log("Email sent successfully ✅");
+
     res.json({ success: true });
 
   } catch (error) {
-    console.error("Consignment Error:", error.response?.data || error.message);
-    res.status(500).json({ success: false });
+    console.error("Consignment Error:");
+    console.error("Status:", error.response?.status);
+    console.error("Data:", error.response?.data);
+    console.error("Message:", error.message);
+
+    res.status(500).json({
+      success: false,
+      error: error.response?.data || error.message
+    });
   }
 });
 
