@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Panel</title>
+<title>EliteWear Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 body {
@@ -11,76 +11,73 @@ body {
     font-family: 'Segoe UI', sans-serif;
     background: #000;
     color: #d4af37;
-    overflow-x: hidden;
 }
 
-/* TOP NAVIGATION */
-.navbar {
-    background: #111;
-    padding: 20px;
+header {
     text-align: center;
-    font-size: 28px;
+    padding: 30px;
+    font-size: 32px;
     font-weight: bold;
-    letter-spacing: 2px;
     border-bottom: 2px solid #d4af37;
+    letter-spacing: 2px;
 }
 
-.navbar span {
-    cursor: pointer;
-    margin-left: 20px;
-    font-size: 18px;
-    padding: 8px 20px;
+.tabs {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.tabs button {
+    background: transparent;
     border: 1px solid #d4af37;
+    color: #d4af37;
+    padding: 10px 25px;
+    margin: 0 10px;
+    cursor: pointer;
     transition: 0.3s;
 }
 
-.navbar span:hover {
+.tabs button:hover {
     background: #d4af37;
     color: black;
 }
 
-/* MAIN SECTION */
 .container {
     display: flex;
     justify-content: center;
-    align-items: center;
-    height: 80vh;
-    animation: fadeIn 0.6s ease-in-out;
+    gap: 60px;
+    margin-top: 60px;
 }
 
-/* IMAGE BOX */
-.image-box {
+.imageBox {
     width: 300px;
     height: 300px;
     border: 2px dashed #d4af37;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 50px;
     cursor: pointer;
+    font-size: 60px;
     transition: 0.3s;
 }
 
-.image-box:hover {
-    background: rgba(212,175,55,0.1);
+.imageBox:hover {
+    box-shadow: 0 0 25px #d4af37;
 }
 
-.image-box input {
-    display: none;
+.imageBox img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-.plus {
-    font-size: 60px;
-}
-
-/* FORM AREA */
-.form-area {
+.formArea {
     display: flex;
     flex-direction: column;
     width: 300px;
 }
 
-.form-area input {
+.formArea input {
     margin-bottom: 15px;
     padding: 10px;
     background: black;
@@ -88,24 +85,13 @@ body {
     color: #d4af37;
 }
 
-.form-area button {
+.formArea button {
     padding: 12px;
     background: #d4af37;
-    border: none;
     color: black;
     font-weight: bold;
+    border: none;
     cursor: pointer;
-    transition: 0.3s;
-}
-
-.form-area button:hover {
-    background: gold;
-}
-
-/* ANIMATION */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px);}
-    to { opacity: 1; transform: translateY(0);}
 }
 
 .hidden {
@@ -116,24 +102,25 @@ body {
 
 <body>
 
-<div class="navbar">
-    ADMIN PANEL
-    <span onclick="showProducts()">Products</span>
-    <span onclick="showShirt()">Shirt</span>
+<header>ELITEWEAR ADMIN PANEL</header>
+
+<div class="tabs">
+    <button onclick="showProduct()">Product</button>
+    <button onclick="showShirt()">Shirt</button>
 </div>
 
 <!-- PRODUCT SECTION -->
 <div class="container" id="productSection">
 
-    <label class="image-box">
-        <input type="file">
-        <div class="plus">+</div>
-    </label>
+    <div class="imageBox" onclick="document.getElementById('productImage').click()">
+        +
+        <input type="file" id="productImage" hidden>
+    </div>
 
-    <div class="form-area">
-        <input type="text" placeholder="Product Name">
-        <input type="number" placeholder="Product Price">
-        <button>Upload Product</button>
+    <div class="formArea">
+        <input type="text" id="productName" placeholder="Product Name">
+        <input type="number" id="productPrice" placeholder="Product Price">
+        <button onclick="uploadProduct()">Upload Product</button>
     </div>
 
 </div>
@@ -141,30 +128,91 @@ body {
 <!-- SHIRT SECTION -->
 <div class="container hidden" id="shirtSection">
 
-    <label class="image-box">
-        <input type="file">
-        <div class="plus">+</div>
-    </label>
+    <div class="imageBox" onclick="document.getElementById('shirtImage').click()">
+        +
+        <input type="file" id="shirtImage" hidden>
+    </div>
 
-    <div class="form-area">
-        <input type="text" placeholder="Shirt Name">
-        <input type="number" placeholder="Shirt Price">
-        <input type="text" placeholder="Shirt Size">
-        <input type="text" placeholder="Extra Detail">
-        <button>Upload Shirt</button>
+    <div class="formArea">
+        <input type="text" id="shirtName" placeholder="Shirt Name">
+        <input type="number" id="shirtPrice" placeholder="Shirt Price">
+        <input type="text" id="shirtSize" placeholder="Shirt Size">
+        <input type="text" id="shirtExtra" placeholder="Extra Detail">
+        <button onclick="uploadShirt()">Upload Shirt</button>
     </div>
 
 </div>
 
 <script>
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 function showShirt() {
     document.getElementById("productSection").classList.add("hidden");
     document.getElementById("shirtSection").classList.remove("hidden");
 }
 
-function showProducts() {
+function showProduct() {
     document.getElementById("shirtSection").classList.add("hidden");
     document.getElementById("productSection").classList.remove("hidden");
+}
+
+async function uploadProduct() {
+    const file = document.getElementById("productImage").files[0];
+    const name = document.getElementById("productName").value;
+    const price = document.getElementById("productPrice").value;
+
+    if (!file || !name || !price) {
+        alert("Fill all fields");
+        return;
+    }
+
+    const fileName = Date.now() + "_" + file.name;
+
+    const { error } = await supabase.storage.from("products").upload(fileName, file);
+    if (error) {
+        alert("Image upload failed");
+        return;
+    }
+
+    const { data } = supabase.storage.from("products").getPublicUrl(fileName);
+
+    await supabase.from("products").insert([
+        { product_name: name, product_price: price, image_url: data.publicUrl }
+    ]);
+
+    alert("Product Uploaded Successfully");
+}
+
+async function uploadShirt() {
+    const file = document.getElementById("shirtImage").files[0];
+    const name = document.getElementById("shirtName").value;
+    const price = document.getElementById("shirtPrice").value;
+    const size = document.getElementById("shirtSize").value;
+    const extra = document.getElementById("shirtExtra").value;
+
+    if (!file || !name || !price) {
+        alert("Fill all fields");
+        return;
+    }
+
+    const fileName = Date.now() + "_" + file.name;
+
+    const { error } = await supabase.storage.from("products").upload(fileName, file);
+    if (error) {
+        alert("Image upload failed");
+        return;
+    }
+
+    const { data } = supabase.storage.from("products").getPublicUrl(fileName);
+
+    await supabase.from("products").insert([
+        { product_name: name, product_price: price, image_url: data.publicUrl }
+    ]);
+
+    alert("Shirt Uploaded Successfully");
 }
 </script>
 
