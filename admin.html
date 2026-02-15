@@ -1,113 +1,165 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Admin Panel — EliteWear</title>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 body{
-  font-family:'Poppins',sans-serif;
+  margin:0;
   background:#0b0b0c;
+  font-family:Poppins,sans-serif;
   color:#fff;
   padding:40px;
 }
-input{
-  display:block;
-  margin-bottom:15px;
-  padding:10px;
-  width:300px;
+
+h2{
+  color:#d4af37;
 }
+
+.container{
+  display:flex;
+  gap:30px;
+  align-items:flex-start;
+}
+
+.image-box{
+  width:200px;
+  height:200px;
+  background:#111;
+  border-radius:12px;
+  border:2px dashed #333;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+
+.image-box span{
+  font-size:40px;
+  color:#d4af37;
+}
+
+.preview{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:12px;
+  display:none;
+}
+
+.form{
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+  width:250px;
+}
+
+input{
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  background:#111;
+  color:#fff;
+}
+
 button{
-  padding:10px 20px;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:#d4af37;
+  font-weight:bold;
   cursor:pointer;
 }
 </style>
 </head>
+
 <body>
 
 <h2>Add Product</h2>
 
-<input type="text" id="productName" placeholder="Product Name">
-<input type="number" id="productPrice" placeholder="Product Price">
-<input type="file" id="productImage">
-<button onclick="addProduct()">Upload Product</button>
+<div class="container">
 
-<p id="status"></p>
+  <div class="image-box" onclick="document.getElementById('fileInput').click()">
+    <span id="plus">+</span>
+    <img id="previewImg" class="preview">
+  </div>
+
+  <input type="file" id="fileInput" hidden>
+
+  <div class="form">
+    <input type="text" id="name" placeholder="Product Name">
+    <input type="text" id="price" placeholder="Product Price">
+    <input type="text" id="size" placeholder="Product Size">
+    <button onclick="addProduct()">Submit</button>
+  </div>
+
+</div>
 
 <script>
+const supabase = window.supabase.createClient(
+  "YOUR_SUPABASE_URL",
+  "YOUR_PUBLIC_ANON_KEY"
+);
 
-/* 🔴 PASTE YOUR VALUES HERE */
-const supabaseUrl = "https://vxcoanhvcglxbpxsvsxv.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Y29hbmh2Y2dseGJweHN2c3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MTk4NjgsImV4cCI6MjA4MzE5NTg2OH0.RIx4Yfy74CWWr7vvoh2R5CcFn9Mz6oTw3nsNWkzuRTw";
+const fileInput = document.getElementById("fileInput");
+const previewImg = document.getElementById("previewImg");
+const plus = document.getElementById("plus");
 
-const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
+fileInput.addEventListener("change",()=>{
+  const file = fileInput.files[0];
+  if(file){
+    previewImg.src = URL.createObjectURL(file);
+    previewImg.style.display = "block";
+    plus.style.display = "none";
+  }
+});
 
-async function addProduct() {
+async function addProduct(){
 
-  const name = document.getElementById("productName").value.trim();
-  const price = document.getElementById("productPrice").value.trim();
-  const file = document.getElementById("productImage").files[0];
-  const status = document.getElementById("status");
+  const name = document.getElementById("name").value;
+  const price = document.getElementById("price").value;
+  const size = document.getElementById("size").value;
+  const file = fileInput.files[0];
 
-  if (!name || !price || !file) {
-    status.innerText = "Fill all fields.";
+  if(!name || !price || !size || !file){
+    alert("Fill all fields");
     return;
   }
-
-  status.innerText = "Uploading image...";
 
   const fileName = Date.now() + "_" + file.name;
 
-  // 1️⃣ Upload image to bucket
-  const { error: uploadError } = await sb
-    .storage
+  const { error: uploadError } = await supabase.storage
     .from("products")
-    .upload(fileName, file);
+    .upload(fileName,file);
 
-  if (uploadError) {
-    console.error(uploadError);
-    status.innerText = "Image upload failed.";
+  if(uploadError){
+    alert("Upload failed");
     return;
   }
 
-  // 2️⃣ Get public URL
-  const { data } = sb
-    .storage
-    .from("products")
-    .getPublicUrl(fileName);
-
+  const { data } = supabase.storage.from("products").getPublicUrl(fileName);
   const imageUrl = data.publicUrl;
 
-  // 3️⃣ Insert into database
-  status.innerText = "Saving product...";
-
-  const { error: insertError } = await sb
+  const { error: insertError } = await supabase
     .from("products")
-    .insert([
-      {
-        product_name: name,
-        product_price: price,
-        image_url: imageUrl
-      }
-    ]);
+    .insert([{
+      product_name:name,
+      product_price:price,
+      product_size:size,
+      image_url:imageUrl
+    }]);
 
-  if (insertError) {
-    console.error(insertError);
-    status.innerText = "Database insert failed.";
+  if(insertError){
+    alert("Insert failed");
     return;
   }
 
-  status.innerText = "Product added successfully!";
-
-  // Clear form
-  document.getElementById("productName").value = "";
-  document.getElementById("productPrice").value = "";
-  document.getElementById("productImage").value = "";
+  alert("Product Added Successfully");
+  window.location.href="index.html";
 }
-
 </script>
 
 </body>
