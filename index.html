@@ -1,163 +1,208 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Elite Store</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eliteware</title>
 
 <style>
-body{
-  margin:0;
-  background:#0b0b0c;
-  font-family:Poppins,sans-serif;
-  color:#fff;
-  padding:40px;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f0f0f;
+  color: gold;
+  text-align: center;
 }
 
-h1{
-  color:#d4af37;
+header {
+  padding: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  background: #111;
+  box-shadow: 0 0 20px rgba(255,215,0,0.4);
 }
 
-.products{
-  display:flex;
-  gap:20px;
-  flex-wrap:wrap;
-  margin-top:30px;
+button {
+  padding: 10px 20px;
+  border: none;
+  background: gold;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 20px;
 }
 
-.card{
-  background:#111;
-  padding:15px;
-  border-radius:12px;
-  width:220px;
+button:hover {
+  background: #ffd700;
 }
 
-.card img{
-  width:100%;
-  border-radius:10px;
+/* ADMIN MODAL */
+#adminModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  justify-content: center;
+  align-items: center;
 }
 
-.admin-box{
-  margin-top:50px;
+.admin-box {
+  background: #111;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px gold;
+  width: 300px;
 }
 
-input{
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  background:#111;
-  color:#fff;
+.admin-box input {
+  width: 90%;
+  padding: 10px;
+  margin-top: 15px;
+  background: #000;
+  color: gold;
+  border: 1px solid gold;
 }
 
-button{
-  padding:10px 15px;
-  border:none;
-  border-radius:8px;
-  background:#d4af37;
-  font-weight:bold;
-  cursor:pointer;
+#errorMsg {
+  color: red;
+  margin-top: 10px;
+  display: none;
 }
 
-#error{
-  color:red;
-  margin-top:10px;
-  display:none;
+/* LOADING */
+#loadingScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #000;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.loader {
+  width: 80px;
+  height: 80px;
+  border: 8px solid gold;
+  border-top: 8px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
 }
 </style>
 </head>
 
 <body>
 
-<h1>Available Products</h1>
+<header>ELITEWARE</header>
 
-<div class="products" id="productContainer"></div>
+<h2>Welcome to Eliteware</h2>
 
-<div class="admin-box">
-  <h2>Admin Login</h2>
-  <input type="password" id="adminPass" placeholder="Enter Password">
-  <button id="adminEnter">Enter</button>
-  <div id="error"></div>
+<button id="adminBtn">Admin</button>
+
+<!-- ADMIN MODAL -->
+<div id="adminModal">
+  <div class="admin-box" id="adminBox">
+    <h3>Admin Login</h3>
+    <input type="password" id="adminPass" placeholder="Enter Password">
+    <br>
+    <button id="adminEnter">Enter</button>
+    <div id="errorMsg"></div>
+  </div>
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="loadingScreen">
+  <div class="loader"></div>
+  <div>Access Granted...</div>
 </div>
 
 <script>
-const supabase = window.supabase.createClient(
-  "YOUR_SUPABASE_URL",
-  "YOUR_PUBLIC_ANON_KEY"
-);
-
-async function loadProducts(){
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .order("created_at",{ascending:false});
-
-  if(error){
-    console.log(error);
-    return;
-  }
-
-  const container = document.getElementById("productContainer");
-  container.innerHTML = "";
-
-  data.forEach(product=>{
-    container.innerHTML += `
-      <div class="card">
-        <img src="${product.image_url}">
-        <h3>${product.product_name}</h3>
-        <p>₹ ${product.product_price}</p>
-        <p>Size: ${product.product_size}</p>
-      </div>
-    `;
-  });
-}
-
-loadProducts();
-
-/* ---------- ADMIN PASSWORD LOGIC ---------- */
+const adminBtn = document.getElementById("adminBtn");
+const adminModal = document.getElementById("adminModal");
+const adminPass = document.getElementById("adminPass");
+const adminEnter = document.getElementById("adminEnter");
+const adminError = document.getElementById("errorMsg");
+const adminBox = document.getElementById("adminBox");
+const loadingScreen = document.getElementById("loadingScreen");
 
 const REAL_PASSWORD = "elitetarun2011";
 const MAX_ATTEMPTS = 3;
-const BLOCK_TIME = 2 * 24 * 60 * 60 * 1000;
+const BLOCK_DURATION = 2 * 24 * 60 * 60 * 1000;
 
-let attemptsLeft = parseInt(localStorage.getItem('admin_attempts') || MAX_ATTEMPTS);
-let blockedUntil = parseInt(localStorage.getItem('admin_block_until') || 0);
+let attemptsLeft = parseInt(localStorage.getItem("admin_attempts") || MAX_ATTEMPTS);
+let blockedUntil = parseInt(localStorage.getItem("admin_block_until") || 0);
 
+// Auto reset after 2 days
 if (blockedUntil && Date.now() > blockedUntil) {
-  localStorage.removeItem('admin_block_until');
-  localStorage.setItem('admin_attempts', MAX_ATTEMPTS);
+  localStorage.removeItem("admin_block_until");
+  localStorage.setItem("admin_attempts", MAX_ATTEMPTS);
   attemptsLeft = MAX_ATTEMPTS;
   blockedUntil = 0;
 }
 
-document.getElementById("adminEnter").addEventListener("click", () => {
-  const input = document.getElementById("adminPass").value.trim();
-  const errorDiv = document.getElementById("error");
+adminBtn.addEventListener("click", () => {
+  adminModal.style.display = "flex";
+  adminError.style.display = "none";
+  adminPass.value = "";
 
   if (blockedUntil && Date.now() < blockedUntil) {
-    errorDiv.style.display = "block";
-    errorDiv.innerText = "Blocked. Try again after 2 days.";
+    blockUser();
+  }
+});
+
+adminEnter.addEventListener("click", () => {
+  const val = adminPass.value.trim();
+  if (!val) return;
+
+  if (blockedUntil && Date.now() < blockedUntil) {
+    blockUser();
     return;
   }
 
-  if (input === REAL_PASSWORD) {
-    localStorage.setItem('admin_attempts', MAX_ATTEMPTS);
-    window.location.href = "admin.html";
+  if (val === REAL_PASSWORD) {
+    localStorage.setItem("admin_attempts", MAX_ATTEMPTS);
+    localStorage.removeItem("admin_block_until");
+    showLoadingAndRedirect();
   } else {
     attemptsLeft--;
-    localStorage.setItem('admin_attempts', attemptsLeft);
+    localStorage.setItem("admin_attempts", attemptsLeft);
 
     if (attemptsLeft <= 0) {
-      const until = Date.now() + BLOCK_TIME;
-      localStorage.setItem('admin_block_until', until);
-      errorDiv.innerText = "Blocked for 2 days.";
-      errorDiv.style.display = "block";
+      const until = Date.now() + BLOCK_DURATION;
+      localStorage.setItem("admin_block_until", until);
+      blockUser();
     } else {
-      errorDiv.innerText = "Wrong password — " + attemptsLeft + " attempts left";
-      errorDiv.style.display = "block";
+      showWrong(attemptsLeft);
     }
   }
 });
+
+function showWrong(left) {
+  adminError.textContent = "Wrong password — " + left + " attempts left";
+  adminError.style.display = "block";
+}
+
+function blockUser() {
+  adminError.textContent = "Access Blocked — Try again after 2 days";
+  adminError.style.display = "block";
+  adminPass.disabled = true;
+  adminEnter.disabled = true;
+}
+
+function showLoadingAndRedirect() {
+  adminModal.style.display = "none";
+  loadingScreen.style.display = "flex";
+
+  setTimeout(() => {
+    window.location.href = "admin.html";
+  }, 2000);
+}
 </script>
 
 </body>
