@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Admin Panel</title>
 
+<!-- Supabase CDN (ONLY ONCE) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -103,16 +104,23 @@ button{
 
 <script>
 
+/////////////////////////
+// SUPABASE CONNECTION //
+/////////////////////////
+
 const supabase = window.supabase.createClient(
   "https://vxcoanhvcglxbpxsvsxv.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Y29hbmh2Y2dseGJweHN2c3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MTk4NjgsImV4cCI6MjA4MzE5NTg2OH0.RIx4Yfy74CWWr7vvoh2R5CcFn9Mz6oTw3nsNWkzuRTw"
 );
 
+/////////////////////////
+// IMAGE PREVIEW LOGIC //
+/////////////////////////
+
 const fileInput = document.getElementById("fileInput");
 const previewImg = document.getElementById("previewImg");
 const plus = document.getElementById("plus");
 
-// IMAGE PREVIEW FIXED
 fileInput.addEventListener("change", function () {
 
   const file = this.files[0];
@@ -129,56 +137,67 @@ fileInput.addEventListener("change", function () {
   reader.readAsDataURL(file);
 });
 
+/////////////////////////
+// ADD PRODUCT FUNCTION//
+/////////////////////////
+
 async function addProduct(){
 
-  const name = document.getElementById("name").value.trim();
-  const price = document.getElementById("price").value.trim();
-  const size = document.getElementById("size").value.trim();
-  const file = fileInput.files[0];
+  try {
 
-  if(!name || !price || !size || !file){
-    alert("Fill all fields");
-    return;
+    const name = document.getElementById("name").value.trim();
+    const price = document.getElementById("price").value.trim();
+    const size = document.getElementById("size").value.trim();
+    const file = fileInput.files[0];
+
+    if(!name || !price || !size || !file){
+      alert("Fill all fields");
+      return;
+    }
+
+    const fileName = Date.now() + "_" + file.name;
+
+    // Upload to storage
+    const { error: uploadError } = await supabase.storage
+      .from("products")
+      .upload(fileName, file);
+
+    if(uploadError){
+      console.error(uploadError);
+      alert("Image upload failed");
+      return;
+    }
+
+    // Get public image URL
+    const { data } = supabase.storage
+      .from("products")
+      .getPublicUrl(fileName);
+
+    const imageUrl = data.publicUrl;
+
+    // Insert into database
+    const { error: insertError } = await supabase
+      .from("products")
+      .insert([{
+        product_name: name,
+        product_price: Number(price),
+        product_size: size,
+        image_url: imageUrl
+      }]);
+
+    if(insertError){
+      console.error(insertError);
+      alert("Insert failed");
+      return;
+    }
+
+    alert("Product Added Successfully");
+    window.location.href="index.html";
+
+  } catch (err) {
+    console.error(err);
+    alert("Unexpected error occurred");
   }
-
-  const fileName = Date.now() + "_" + file.name;
-
-  // Upload image
-  const { error: uploadError } = await supabase.storage
-    .from("products")
-    .upload(fileName, file);
-
-  if(uploadError){
-    console.error(uploadError);
-    alert("Image upload failed");
-    return;
-  }
-
-  // Get public URL
-  const { data } = supabase.storage
-    .from("products")
-    .getPublicUrl(fileName);
-
-  const imageUrl = data.publicUrl;
-
-  // Insert into database
-  const { error: insertError } = await supabase
-    .from("products")
-    .insert([{
-      product_name: name,
-      product_price: Number(price),
-      product_size: size,
-      image_url: imageUrl
-    }]);
-
-  if(insertError){
-    console.error(insertError);
-    alert("Insert failed");
-    return;
-  }
-
-  alert("Product Added Successfully");
-  window.location.href="index.html";
 }
 
 </script>
