@@ -35,11 +35,14 @@ h2{
   align-items:center;
   justify-content:center;
   cursor:pointer;
+  overflow:hidden;
+  position:relative;
 }
 
 .image-box span{
   font-size:40px;
   color:#d4af37;
+  position:absolute;
 }
 
 .preview{
@@ -109,71 +112,73 @@ const fileInput = document.getElementById("fileInput");
 const previewImg = document.getElementById("previewImg");
 const plus = document.getElementById("plus");
 
-fileInput.addEventListener("change",()=>{
-  const file = fileInput.files[0];
-  if(file){
-    previewImg.src = URL.createObjectURL(file);
+// IMAGE PREVIEW FIXED
+fileInput.addEventListener("change", function () {
+
+  const file = this.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function (e) {
+    previewImg.src = e.target.result;
     previewImg.style.display = "block";
     plus.style.display = "none";
-  }
+  };
+
+  reader.readAsDataURL(file);
 });
 
 async function addProduct(){
-  try {
 
-    const name = document.getElementById("name").value.trim();
-    const price = document.getElementById("price").value.trim();
-    const size = document.getElementById("size").value.trim();
-    const file = fileInput.files[0];
+  const name = document.getElementById("name").value.trim();
+  const price = document.getElementById("price").value.trim();
+  const size = document.getElementById("size").value.trim();
+  const file = fileInput.files[0];
 
-    if(!name || !price || !size || !file){
-      alert("Fill all fields");
-      return;
-    }
-
-    const fileName = Date.now() + "_" + file.name;
-
-    // Upload image
-    const { error: uploadError } = await supabase.storage
-      .from("products")
-      .upload(fileName, file);
-
-    if(uploadError){
-      console.error(uploadError);
-      alert("Image upload failed");
-      return;
-    }
-
-    // Get public URL
-    const { data } = supabase.storage
-      .from("products")
-      .getPublicUrl(fileName);
-
-    const imageUrl = data.publicUrl;
-
-    // Insert into database
-    const { error: insertError } = await supabase
-      .from("products")
-      .insert([{
-        product_name: name,
-        product_price: Number(price),
-        product_size: size,
-        image_url: imageUrl
-      }]);
-
-    if(insertError){
-      console.error(insertError);
-      alert("Insert failed");
-      return;
-    }
-
-    alert("Product Added Successfully");
-    window.location.href = "index.html";
-
-  } catch (err) {
-    console.error(err);
-    alert("Unexpected error");
+  if(!name || !price || !size || !file){
+    alert("Fill all fields");
+    return;
   }
+
+  const fileName = Date.now() + "_" + file.name;
+
+  // Upload image
+  const { error: uploadError } = await supabase.storage
+    .from("products")
+    .upload(fileName, file);
+
+  if(uploadError){
+    console.error(uploadError);
+    alert("Image upload failed");
+    return;
+  }
+
+  // Get public URL
+  const { data } = supabase.storage
+    .from("products")
+    .getPublicUrl(fileName);
+
+  const imageUrl = data.publicUrl;
+
+  // Insert into database
+  const { error: insertError } = await supabase
+    .from("products")
+    .insert([{
+      product_name: name,
+      product_price: Number(price),
+      product_size: size,
+      image_url: imageUrl
+    }]);
+
+  if(insertError){
+    console.error(insertError);
+    alert("Insert failed");
+    return;
+  }
+
+  alert("Product Added Successfully");
+  window.location.href="index.html";
 }
 
 </script>
