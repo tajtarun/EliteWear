@@ -2,205 +2,113 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Admin Panel</title>
-
-<!-- Supabase CDN (ONLY ONCE) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
-body{
-  margin:0;
-  background:#0b0b0c;
-  font-family:Poppins,sans-serif;
-  color:#fff;
-  padding:40px;
-}
-
-h2{
-  color:#d4af37;
-}
-
-.container{
-  display:flex;
-  gap:30px;
-  align-items:flex-start;
-}
-
-.image-box{
-  width:200px;
-  height:200px;
-  background:#111;
-  border-radius:12px;
-  border:2px dashed #333;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  overflow:hidden;
-  position:relative;
-}
-
-.image-box span{
-  font-size:40px;
-  color:#d4af37;
-  position:absolute;
-}
-
-.preview{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  border-radius:12px;
-  display:none;
-}
-
-.form{
-  display:flex;
-  flex-direction:column;
-  gap:15px;
-  width:250px;
-}
-
-input{
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  background:#111;
-  color:#fff;
-}
-
-button{
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  background:#d4af37;
-  font-weight:bold;
-  cursor:pointer;
-}
+body{margin:0;background:#0b0b0c;font-family:Poppins,sans-serif;color:#fff;padding:40px}
+h2{color:#d4af37}
+.container{display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap}
+.image-box{width:200px;height:200px;background:#111;border-radius:12px;border:2px dashed #333;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative}
+.image-box span{font-size:40px;color:#d4af37;position:absolute}
+.preview{width:100%;height:100%;object-fit:cover;border-radius:12px;display:none}
+.form{display:flex;flex-direction:column;gap:15px;width:250px}
+input{padding:10px;border-radius:8px;border:none;background:#111;color:#fff}
+button{padding:10px;border:none;border-radius:8px;background:#d4af37;font-weight:bold;cursor:pointer}
+#status{margin-top:12px;color:#cfcfcf;min-height:20px}
 </style>
 </head>
-
 <body>
-
 <h2>Add Product</h2>
-
 <div class="container">
-
-  <div class="image-box" onclick="document.getElementById('fileInput').click()">
+  <div class="image-box" id="imageBox">
     <span id="plus">+</span>
-    <img id="previewImg" class="preview">
+    <img id="previewImg" class="preview" alt="Product preview" />
   </div>
-
-  <input type="file" id="fileInput" hidden>
-
+  <input type="file" id="fileInput" accept="image/*" hidden>
   <div class="form">
     <input type="text" id="name" placeholder="Product Name">
     <input type="number" id="price" placeholder="Product Price">
     <input type="text" id="size" placeholder="Product Size">
-    <button onclick="addProduct()">Submit</button>
+    <button id="submitBtn">Submit</button>
+    <div id="status"></div>
   </div>
-
 </div>
-
 <script>
-
-/////////////////////////
-// SUPABASE CONNECTION //
-/////////////////////////
-
 const supabase = window.supabase.createClient(
   "https://vxcoanhvcglxbpxsvsxv.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Y29hbmh2Y2dseGJweHN2c3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MTk4NjgsImV4cCI6MjA4MzE5NTg2OH0.RIx4Yfy74CWWr7vvoh2R5CcFn9Mz6oTw3nsNWkzuRTw"
 );
 
-/////////////////////////
-// IMAGE PREVIEW LOGIC //
-/////////////////////////
+const imageBox = document.getElementById('imageBox');
+const fileInput = document.getElementById('fileInput');
+const previewImg = document.getElementById('previewImg');
+const plus = document.getElementById('plus');
+const submitBtn = document.getElementById('submitBtn');
+const statusEl = document.getElementById('status');
 
-const fileInput = document.getElementById("fileInput");
-const previewImg = document.getElementById("previewImg");
-const plus = document.getElementById("plus");
-
-fileInput.addEventListener("change", function () {
-
-  const file = this.files[0];
+imageBox.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files?.[0];
   if (!file) return;
-
-  const reader = new FileReader();
-
-  reader.onload = function (e) {
-    previewImg.src = e.target.result;
-    previewImg.style.display = "block";
-    plus.style.display = "none";
-  };
-
-  reader.readAsDataURL(file);
+  const objectUrl = URL.createObjectURL(file);
+  previewImg.src = objectUrl;
+  previewImg.style.display = 'block';
+  plus.style.display = 'none';
 });
 
-/////////////////////////
-// ADD PRODUCT FUNCTION//
-/////////////////////////
+submitBtn.addEventListener('click', addProduct);
 
 async function addProduct(){
+  const name = document.getElementById('name').value.trim();
+  const price = document.getElementById('price').value.trim();
+  const size = document.getElementById('size').value.trim();
+  const file = fileInput.files?.[0];
+
+  if(!name || !price || !size || !file){
+    statusEl.textContent = 'Please fill all fields and select an image.';
+    return;
+  }
+
+  submitBtn.disabled = true;
+  statusEl.textContent = 'Uploading product...';
 
   try {
+    const ext = file.name.split('.').pop() || 'jpg';
+    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
 
-    const name = document.getElementById("name").value.trim();
-    const price = document.getElementById("price").value.trim();
-    const size = document.getElementById("size").value.trim();
-    const file = fileInput.files[0];
-
-    if(!name || !price || !size || !file){
-      alert("Fill all fields");
-      return;
-    }
-
-    const fileName = Date.now() + "_" + file.name;
-
-    // Upload to storage
     const { error: uploadError } = await supabase.storage
-      .from("products")
-      .upload(fileName, file);
+      .from('products')
+      .upload(fileName, file, { upsert: false });
 
     if(uploadError){
       console.error(uploadError);
-      alert("Image upload failed");
+      statusEl.textContent = 'Image upload failed. Check storage bucket permissions.';
+      submitBtn.disabled = false;
       return;
     }
 
-    // Get public image URL
-    const { data } = supabase.storage
-      .from("products")
-      .getPublicUrl(fileName);
+    const { data: publicData } = supabase.storage.from('products').getPublicUrl(fileName);
 
-    const imageUrl = data.publicUrl;
-
-    // Insert into database
     const { error: insertError } = await supabase
-      .from("products")
-      .insert([{
-        product_name: name,
-        product_price: Number(price),
-        product_size: size,
-        image_url: imageUrl
-      }]);
+      .from('products')
+      .insert([{ product_name: name, product_price: Number(price), product_size: size, image_url: publicData.publicUrl }]);
 
     if(insertError){
       console.error(insertError);
-      alert("Insert failed");
+      statusEl.textContent = 'Saving product failed. Check table permissions.';
+      submitBtn.disabled = false;
       return;
     }
 
-    alert("Product Added Successfully");
-    window.location.href="index.html";
-
+    statusEl.textContent = 'Product added successfully. Redirecting...';
+    setTimeout(() => { window.location.href = 'index.html'; }, 700);
   } catch (err) {
     console.error(err);
-    alert("Unexpected error occurred");
+    statusEl.textContent = 'Unexpected error occurred.';
+    submitBtn.disabled = false;
   }
 }
-
 </script>
-
 </body>
 </html>

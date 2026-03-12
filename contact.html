@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>EliteWear — Contact</title>
+<title>Contact EliteWear</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
 
 <style>
@@ -134,20 +134,20 @@ button:hover{
 
 <div class="container">
   <h1>Contact EliteWear</h1>
-  <p>Have a question or business inquiry? Send us a message below.</p>
+  <p>Questions about sizing, orders, or consignments? Send us a message and our team will reply shortly.</p>
 
   <form id="contactForm">
     <input type="text" id="name" placeholder="Your Name" required>
     <input type="email" id="email" placeholder="Your Email" required>
     <textarea id="message" placeholder="Your Message" required></textarea>
-    <button type="submit">Send Message</button>
+    <button type="submit">Send Inquiry</button>
     <div class="status" id="status"></div>
   </form>
 </div>
 
 <div class="footer">
-  © EliteWear — Crafted with care.<br>
-  — MADE BY TARUN —
+  © EliteWear — Curated for confidence.<br>
+  Premium menswear and accessories.
 </div>
 
 <script>
@@ -175,14 +175,14 @@ form.addEventListener("submit", async (e) => {
     const data = await res.json();
 
     if(data.success){
-      statusDiv.textContent = "Message sent successfully ✔";
+      statusDiv.textContent = "Your message has been sent successfully ✔";
       form.reset();
     } else {
-      statusDiv.textContent = "Failed to send message.";
+      statusDiv.textContent = "We could not send your message. Please try again.";
     }
 
   } catch (err) {
-    statusDiv.textContent = "Server error. Try again.";
+    statusDiv.textContent = "Server error. Please try again in a moment.";
   }
 });
 </script>

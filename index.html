@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>EliteWear — Shirts & Watches</title>
+<title>EliteWear — Luxury Menswear & Timepieces</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -82,7 +82,7 @@ footer{ text-align:center; margin:50px 0; font-size:14px; color:#aaa; }
 <img src="elitewear-logo.jpg">
 <div>
 <h1>EliteWear</h1>
-<div style="font-size:13px;color:#bbb">Shirts • Watches • Bespoke</div>
+<div style="font-size:13px;color:#bbb">Luxury Menswear • Watches • Bespoke</div>
 </div>
 </div>
 <nav>
@@ -98,23 +98,23 @@ footer{ text-align:center; margin:50px 0; font-size:14px; color:#aaa; }
 <img src="shoes.jpg">
 <img src="watch.jpg">
 <div class="hero-text">
-<h2>EliteWear Collection</h2>
-<p>Curated luxury pieces — Signature selections & bespoke consignments</p>
+<h2>Own the Room in EliteWear</h2>
+<p>Discover premium shirts, shoes, and timepieces curated for modern gentlemen.</p>
 </div>
 </div>
 
-<h3 style="width:90%;max-width:1400px;margin:32px auto 0;color:#fff;">Available Products</h3>
+<h3 style="width:90%;max-width:1400px;margin:32px auto 0;color:#fff;">Shop Featured Pieces</h3>
 <div class="products" id="productsContainer"></div>
 
 <footer>
-© EliteWear — Crafted with care.<br>
-— MADE BY TARUN —
+© EliteWear — Curated for confidence.<br>
+Premium menswear and accessories.
 </footer>
 
 <div class="modal-bg" id="adminModal">
 <div class="modal" id="adminBox">
 <h3 style="color:var(--gold);margin:0 0 6px">Admin Access</h3>
-<p style="color:#cfcfcf;margin:0 0 10px">Only admins can manage products</p>
+<p style="color:#cfcfcf;margin:0 0 10px">Authorized access only for product management</p>
 <div class="fingerprint" id="fingerprintBtn"></div>
 <input id="adminPass" class="input-pass" type="password" placeholder="Enter admin password">
 <button id="adminEnter" class="btn btn-enter">Enter</button>
@@ -131,9 +131,73 @@ footer{ text-align:center; margin:50px 0; font-size:14px; color:#aaa; }
 
 <script>
 const sb = window.supabase.createClient(
-"https://eonwirzbhwcpfqiltyjp.supabase.co",
-"YOUR_PUBLIC_KEY"
+"https://vxcoanhvcglxbpxsvsxv.supabase.co",
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Y29hbmh2Y2dseGJweHN2c3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MTk4NjgsImV4cCI6MjA4MzE5NTg2OH0.RIx4Yfy74CWWr7vvoh2R5CcFn9Mz6oTw3nsNWkzuRTw"
 );
+
+
+
+async function loadProducts(){
+  const container = document.getElementById('productsContainer');
+  container.innerHTML = '<p style="color:#bbb">Loading products...</p>';
+
+  const { data, error } = await sb
+    .from('products')
+    .select('id, product_name, product_price, product_size, image_url')
+    .order('id', { ascending: false });
+
+  if(error){
+    console.error(error);
+    container.innerHTML = '<p style="color:#ff8b8b">Unable to load products right now.</p>';
+    return;
+  }
+
+  if(!data || data.length === 0){
+    container.innerHTML = '<p style="color:#bbb">No products yet. Check back soon.</p>';
+    return;
+  }
+
+  container.innerHTML = '';
+  data.forEach((p) => {
+    const card = document.createElement('article');
+    card.className = 'product-card';
+    const sizeText = p.product_size ? `<div style="color:#bfb8ad;font-size:13px;margin-top:4px">Size: ${p.product_size}</div>` : '';
+    card.innerHTML = `
+      <div class="product-img-box">
+        <img src="${p.image_url}" alt="${p.product_name}">
+      </div>
+      <div class="product-meta">
+        <div>
+          <div class="title">${p.product_name}</div>
+          ${sizeText}
+        </div>
+        <div>
+          <span class="price">₹${Number(p.product_price || 0).toLocaleString('en-IN')}</span>
+          <button class="buy-btn">Add</button>
+        </div>
+      </div>
+    `;
+
+    const addBtn = card.querySelector('.buy-btn');
+    addBtn.addEventListener('click', () => addToCart({
+      id: p.id,
+      name: p.product_name,
+      price: Number(p.product_price || 0),
+      img: p.image_url
+    }));
+
+    container.appendChild(card);
+  });
+}
+
+function addToCart(item){
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  cart.push(item);
+  localStorage.setItem('cart', JSON.stringify(cart));
+  alert('Added to cart');
+}
+
+loadProducts();
 
 /* ================= ADMIN LOGIC (UPDATED ONLY THIS) ================= */
 

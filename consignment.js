@@ -20,8 +20,8 @@ function addNewItem() {
       <input type="file" accept="image/*">
     </div>
     <div class="fields">
-      <input type="text" name="names[]" placeholder="Product Name">
-      <input type="text" name="prices[]" placeholder="Product Price">
+      <input type="text" name="names[]" placeholder="Item name (e.g., Armani Shirt)">
+      <input type="text" name="prices[]" placeholder="Expected price (₹)">
     </div>
   `;
 
@@ -85,7 +85,7 @@ form.addEventListener("submit", async function (e) {
     if (!file && !name && !price) continue;
 
     if (!file || !name || !price) {
-      errorBox.innerHTML = "Please fill image, name and price for all items.";
+      errorBox.innerHTML = "Please add image, name, and expected price for each item.";
       return;
     }
 
@@ -97,7 +97,7 @@ form.addEventListener("submit", async function (e) {
   }
 
   if (validItems === 0) {
-    errorBox.innerHTML = "Add at least one item.";
+    errorBox.innerHTML = "Add at least one complete item to continue.";
     return;
   }
 
@@ -112,10 +112,10 @@ form.addEventListener("submit", async function (e) {
     if (result.success) {
       window.location.href = "thankyou-consignment.html";
     } else {
-      errorBox.innerHTML = "Submission failed.";
+      errorBox.innerHTML = "Submission failed. Please review your entries and try again.";
     }
 
   } catch (err) {
-    errorBox.innerHTML = "Server error. Try again.";
+    errorBox.innerHTML = "Server error. Please try again in a moment.";
   }
 });
