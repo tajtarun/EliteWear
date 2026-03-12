@@ -20,20 +20,24 @@ button{padding:10px;border:none;border-radius:8px;background:#d4af37;font-weight
 </head>
 <body>
 <h2>Add Product</h2>
+
 <div class="container">
-  <div class="image-box" id="imageBox">
+  <label class="image-box" id="imageBox" for="fileInput">
     <span id="plus">+</span>
     <img id="previewImg" class="preview" alt="Product preview" />
-  </div>
+  </label>
+
   <input type="file" id="fileInput" accept="image/*" hidden>
+
   <div class="form">
     <input type="text" id="name" placeholder="Product Name">
     <input type="number" id="price" placeholder="Product Price">
     <input type="text" id="size" placeholder="Product Size">
-    <button id="submitBtn">Submit</button>
+    <button id="submitBtn" type="button">Submit</button>
     <div id="status"></div>
   </div>
 </div>
+
 <script>
 const supabase = window.supabase.createClient(
   "https://vxcoanhvcglxbpxsvsxv.supabase.co",
@@ -48,24 +52,29 @@ const submitBtn = document.getElementById('submitBtn');
 const statusEl = document.getElementById('status');
 
 imageBox.addEventListener('click', () => fileInput.click());
+
 fileInput.addEventListener('change', () => {
   const file = fileInput.files?.[0];
   if (!file) return;
-  const objectUrl = URL.createObjectURL(file);
-  previewImg.src = objectUrl;
-  previewImg.style.display = 'block';
-  plus.style.display = 'none';
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    previewImg.src = e.target.result;
+    previewImg.style.display = 'block';
+    plus.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
 });
 
 submitBtn.addEventListener('click', addProduct);
 
-async function addProduct(){
+async function addProduct() {
   const name = document.getElementById('name').value.trim();
   const price = document.getElementById('price').value.trim();
   const size = document.getElementById('size').value.trim();
   const file = fileInput.files?.[0];
 
-  if(!name || !price || !size || !file){
+  if (!name || !price || !size || !file) {
     statusEl.textContent = 'Please fill all fields and select an image.';
     return;
   }
@@ -77,35 +86,58 @@ async function addProduct(){
     const ext = file.name.split('.').pop() || 'jpg';
     const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('products')
-      .upload(fileName, file, { upsert: false });
+    // Try both possible bucket names
+    const bucketCandidates = ['products', 'product_images'];
+    let uploadedBucket = null;
+    let uploadErr = null;
 
-    if(uploadError){
-      console.error(uploadError);
-      statusEl.textContent = 'Image upload failed. Check storage bucket permissions.';
+    for (const bucket of bucketCandidates) {
+      const { error } = await supabase.storage.from(bucket).upload(fileName, file, { upsert: false });
+      if (!error) {
+        uploadedBucket = bucket;
+        break;
+      }
+      uploadErr = error;
+    }
+
+    if (!uploadedBucket) {
+      statusEl.textContent = `Image upload failed: ${uploadErr?.message || 'Check bucket/policy.'}`;
       submitBtn.disabled = false;
       return;
     }
 
-    const { data: publicData } = supabase.storage.from('products').getPublicUrl(fileName);
+    const { data: publicData } = supabase.storage.from(uploadedBucket).getPublicUrl(fileName);
+    const imageUrl = publicData?.publicUrl;
 
-    const { error: insertError } = await supabase
-      .from('products')
-      .insert([{ product_name: name, product_price: Number(price), product_size: size, image_url: publicData.publicUrl }]);
+    // Try both possible table schema styles
+    const payloads = [
+      { product_name: name, product_price: Number(price), product_size: size, image_url: imageUrl },
+      { name, price: Number(price), size, image: imageUrl }
+    ];
 
-    if(insertError){
-      console.error(insertError);
-      statusEl.textContent = 'Saving product failed. Check table permissions.';
+    let insertErr = null;
+    let inserted = false;
+
+    for (const payload of payloads) {
+      const { error } = await supabase.from('products').insert([payload]);
+      if (!error) {
+        inserted = true;
+        break;
+      }
+      insertErr = error;
+    }
+
+    if (!inserted) {
+      statusEl.textContent = `Saving product failed: ${insertErr?.message || 'Check table/policy.'}`;
       submitBtn.disabled = false;
       return;
     }
 
     statusEl.textContent = 'Product added successfully. Redirecting...';
     setTimeout(() => { window.location.href = 'index.html'; }, 700);
+
   } catch (err) {
-    console.error(err);
-    statusEl.textContent = 'Unexpected error occurred.';
+    statusEl.textContent = `Unexpected error: ${err?.message || 'Unknown error'}`;
     submitBtn.disabled = false;
   }
 }
