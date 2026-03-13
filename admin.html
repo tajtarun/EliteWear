@@ -39,7 +39,7 @@ button{padding:10px;border:none;border-radius:8px;background:#d4af37;font-weight
 </div>
 
 <script>
-const supabase = window.supabase.createClient(
+const sbClient = window.supabase.createClient(
   "https://vxcoanhvcglxbpxsvsxv.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Y29hbmh2Y2dseGJweHN2c3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MTk4NjgsImV4cCI6MjA4MzE5NTg2OH0.RIx4Yfy74CWWr7vvoh2R5CcFn9Mz6oTw3nsNWkzuRTw"
 );
@@ -79,6 +79,11 @@ async function addProduct() {
     return;
   }
 
+  if (Number(price) <= 0) {
+    statusEl.textContent = 'Please enter a valid product price.';
+    return;
+  }
+
   submitBtn.disabled = true;
   statusEl.textContent = 'Uploading product...';
 
@@ -92,7 +97,7 @@ async function addProduct() {
     let uploadErr = null;
 
     for (const bucket of bucketCandidates) {
-      const { error } = await supabase.storage.from(bucket).upload(fileName, file, { upsert: false });
+      const { error } = await sbClient.storage.from(bucket).upload(fileName, file, { upsert: false });
       if (!error) {
         uploadedBucket = bucket;
         break;
@@ -106,7 +111,7 @@ async function addProduct() {
       return;
     }
 
-    const { data: publicData } = supabase.storage.from(uploadedBucket).getPublicUrl(fileName);
+    const { data: publicData } = sbClient.storage.from(uploadedBucket).getPublicUrl(fileName);
     const imageUrl = publicData?.publicUrl;
 
     // Try both possible table schema styles
@@ -119,7 +124,7 @@ async function addProduct() {
     let inserted = false;
 
     for (const payload of payloads) {
-      const { error } = await supabase.from('products').insert([payload]);
+      const { error } = await sbClient.from('products').insert([payload]);
       if (!error) {
         inserted = true;
         break;
