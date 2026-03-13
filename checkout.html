@@ -15,7 +15,52 @@
     .item {
       border-bottom: 1px solid #444;
       padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
     }
+
+    .item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .item img {
+      width: 70px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #222;
+    }
+
+    .item-name {
+      font-weight: bold;
+    }
+
+    .qty-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 6px;
+      background: #2c2c2c;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      margin: 0;
+      padding: 0;
+    }
+
+    .qty-val { min-width: 20px; text-align: center; }
 
     input, button {
       padding: 10px;
@@ -28,14 +73,30 @@
       background: gold;
       border: none;
       font-weight: bold;
+      cursor: pointer;
     }
 
     #loginBox {
       display: none;
-      background: #222;
-      padding: 20px;
-      margin-top: 20px;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
     }
+
+    .login-card {
+      width: 92%;
+      max-width: 420px;
+      background: #222;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+      text-align: center;
+    }
+
+    .login-row { margin-top: 8px; }
   </style>
 </head>
 
@@ -50,84 +111,128 @@
 <button onclick="buy()">Buy</button>
 
 <div id="loginBox">
-
-  <h3>Sign In</h3>
-
-  <input id="name" placeholder="Name"><br>
-  <input id="email" placeholder="Gmail"><br>
-  <input id="phone" placeholder="Phone"><br>
-  <input id="address" placeholder="Address"><br>
-
-  <button onclick="submitLogin()">Confirm</button>
-
+  <div class="login-card">
+    <h3>Sign In to Continue</h3>
+    <div class="login-row"><input id="name" placeholder="Name"></div>
+    <div class="login-row"><input id="email" placeholder="Gmail"></div>
+    <div class="login-row"><input id="phone" placeholder="Phone"></div>
+    <div class="login-row"><input id="address" placeholder="Address"></div>
+    <button onclick="submitLogin()">Confirm</button>
+  </div>
 </div>
 
 <script>
+const API_FALLBACKS = [
+  "https://elitewear-backend.onrender.com",
+  "http://127.0.0.1:3000"
+];
 
-const API_URL = "https://elitewear-backend.onrender.com";
+function parsePrice(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const cleaned = String(value ?? '').replace(/[^\d.]/g, '');
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
+function normalizeCartItem(item) {
+  return {
+    ...item,
+    name: item?.name || item?.product_name || "Product",
+    img: item?.img || item?.image || item?.image_url || "",
+    qty: Math.max(1, Number(item?.qty || 1)),
+    price: parsePrice(item?.price ?? item?.product_price)
+  };
+}
 
-let user = JSON.parse(localStorage.getItem("userData"));
+function readCart() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("cart")) || [];
+    return raw.map(normalizeCartItem);
+  } catch (e) {
+    return [];
+  }
+}
 
-/* =====================
-   LOAD CART
-===================== */
+function writeCart(items) {
+  localStorage.setItem("cart", JSON.stringify(items));
+}
+
+let cart = readCart();
+let user = JSON.parse(localStorage.getItem("userData") || "null");
+const signedIn = localStorage.getItem("userSignedIn") === "true";
+if (!signedIn) user = null;
 
 function loadCart() {
+  cart = readCart();
 
   const box = document.getElementById("cartBox");
   let total = 0;
-
   box.innerHTML = "";
 
-  cart.forEach(item => {
-
+  cart.forEach((item, index) => {
     total += item.price * item.qty;
 
-    box.innerHTML += `
-      <div class="item">
-        <b>${item.name}</b><br>
-        Price: ₹${item.price}<br>
-        Qty: ${item.qty}
+    const row = document.createElement("div");
+    row.className = "item";
+    row.innerHTML = `
+      <div class="item-left">
+        <img src="${item.img || "https://via.placeholder.com/200x200?text=No+Image"}" alt="${item.name}">
+        <div>
+          <div class="item-name">${item.name}</div>
+          <div>Price: ₹${item.price}</div>
+        </div>
+      </div>
+      <div class="qty-wrap">
+        <button class="qty-btn" data-action="minus" data-index="${index}">-</button>
+        <div class="qty-val">${item.qty}</div>
+        <button class="qty-btn" data-action="plus" data-index="${index}">+</button>
       </div>
     `;
+    box.appendChild(row);
   });
 
-  document.getElementById("total").innerText =
-    "Total: ₹" + total;
+  if (!cart.length) {
+    box.innerHTML = "<p>Your cart is empty.</p>";
+  }
 
+  document.getElementById("total").innerText = "Total: ₹" + total.toLocaleString("en-IN");
   return total;
 }
 
-/* =====================
-   BUY
-===================== */
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".qty-btn");
+  if (!btn) return;
+
+  const idx = Number(btn.dataset.index);
+  const action = btn.dataset.action;
+  const items = readCart();
+  if (!items[idx]) return;
+
+  if (action === "minus" && items[idx].qty > 1) items[idx].qty -= 1;
+  if (action === "plus") items[idx].qty += 1;
+
+  writeCart(items);
+  loadCart();
+});
 
 function buy() {
-
   if (!cart.length) {
     alert("Cart empty");
     return;
   }
 
   if (!user) {
-    document.getElementById("loginBox").style.display = "block";
+    document.getElementById("loginBox").style.display = "flex";
   } else {
     placeOrder();
   }
 }
 
-/* =====================
-   LOGIN
-===================== */
-
 function submitLogin() {
-
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("email").value;
-  const phone = document.getElementById("phone").value;
-  const address = document.getElementById("address").value;
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
 
   if (!name || !email || !phone || !address) {
     alert("Fill all fields");
@@ -135,61 +240,87 @@ function submitLogin() {
   }
 
   user = { name, email, phone, address };
-
   localStorage.setItem("userData", JSON.stringify(user));
-
+  localStorage.setItem("userSignedIn", "true");
   document.getElementById("loginBox").style.display = "none";
 
-  placeOrder();
+  saveSignedInUser(user)
+    .catch(() => {
+      // keep order flow alive even if signin save failed
+    })
+    .finally(() => {
+      placeOrder();
+    });
 }
 
-/* =====================
-   ORDER
-===================== */
+async function fetchWithFallback(path, options) {
+  let lastError = null;
 
-async function placeOrder() {
-
-  const total = loadCart();
-
-  try {
-
-    const res = await fetch(`${API_URL}/order`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        user,
-        cart,
-        total
-      })
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-
-      alert("Order Placed Successfully!");
-
-      localStorage.removeItem("cart");
-
-      window.location.href = "thankyou.html";
-
-    } else {
-      alert("Order Failed");
+  for (const baseUrl of API_FALLBACKS) {
+    try {
+      const res = await fetch(`${baseUrl}${path}`, options);
+      return { res, baseUrl };
+    } catch (err) {
+      lastError = err;
     }
+  }
 
-  } catch (err) {
-    alert("Server error");
+  throw lastError || new Error("Network error");
+}
+
+async function saveSignedInUser(userInfo) {
+  const { res } = await fetchWithFallback("/signin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(userInfo)
+  });
+
+  if (!res.ok) {
+    throw new Error("Sign-in save failed");
+  }
+
+  const payload = await res.json();
+  if (payload?.user_id) {
+    user = { ...user, user_id: payload.user_id };
+    localStorage.setItem("userData", JSON.stringify(user));
   }
 }
 
-/* =====================
-   INIT
-===================== */
+async function placeOrder() {
+  const total = loadCart();
+  if (!Number(total) || total <= 0) {
+    alert("Cart total is invalid. Please update quantities and try again.");
+    return;
+  }
+
+  try {
+    const { res, baseUrl } = await fetchWithFallback("/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user,
+        cart: readCart(),
+        total,
+        payment_method: localStorage.getItem("paymentMethod") || "Not specified"
+      })
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && data.success) {
+      alert("Order Placed Successfully!");
+      localStorage.removeItem("cart");
+      window.location.href = "thankyou.html";
+      return;
+    }
+
+    alert(data.message || `Order failed on ${baseUrl}. Please try again.`);
+  } catch (err) {
+    alert("Server not reachable. Please try again in a moment.");
+  }
+}
 
 loadCart();
-
 </script>
 
 </body>
