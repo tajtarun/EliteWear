@@ -16,8 +16,12 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Poppins}
 .card img{width:96px;height:76px;object-fit:cover;border-radius:8px}
 .details{flex:1}
 .title{font-weight:700;margin-bottom:6px}
-.price-row{display:flex;align-items:center;gap:12px;justify-content:space-between}
 .remove{background:#2b2b2b;border:none;padding:8px 10px;border-radius:8px;color:#fff;cursor:pointer}
+.qty-wrap{display:flex;align-items:center;gap:10px;margin-top:8px}
+.qty-btn{background:#232323;border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-weight:800}
+.qty-val{min-width:22px;text-align:center;font-weight:700}
+.payment{margin-top:14px;background:#111;padding:12px;border-radius:10px}
+.payment label{display:block;margin-top:8px;color:#ddd}
 .summary{margin-top:18px;background:#0e0e0e;padding:14px;border-radius:12px;display:flex;justify-content:space-between;align-items:center}
 .checkout{background:linear-gradient(90deg,var(--gold),#f3e0a8);border:none;padding:10px 16px;border-radius:10px;font-weight:800;cursor:pointer;color:#000}
 .empty{padding:40px;text-align:center;color:var(--muted);background:var(--card);border-radius:12px}
@@ -41,6 +45,13 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Poppins}
   </div>
 
   <div id="summary" style="display:none">
+    <div class="payment">
+      <div style="font-weight:700">Select Payment Option</div>
+      <label><input type="radio" name="paymentMethod" value="UPI"> UPI</label>
+      <label><input type="radio" name="paymentMethod" value="Card"> Credit / Debit Card</label>
+      <label><input type="radio" name="paymentMethod" value="COD"> Cash on Delivery</label>
+    </div>
+
     <div class="summary">
       <div>
         <div style="color:#bfb8ad">Total</div>
@@ -55,8 +66,32 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Poppins}
 </div>
 
 <script>
+function parsePrice(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const cleaned = String(value ?? '').replace(/[^\d.]/g, '');
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeCartItem(item) {
+  return {
+    ...item,
+    name: item?.name || item?.product_name || 'Product',
+    img: item?.img || item?.image || item?.image_url || '',
+    price: parsePrice(item?.price ?? item?.product_price),
+    qty: Math.max(1, Number(item?.qty || 1))
+  };
+}
+
 function readCart(){
-  try{ return JSON.parse(localStorage.getItem('cart')) || []; } catch(e){ return []; }
+  try{
+    const raw = JSON.parse(localStorage.getItem('cart')) || [];
+    return raw.map(normalizeCartItem);
+  } catch(e){ return []; }
+}
+
+function writeCart(cart){
+  localStorage.setItem('cart', JSON.stringify(cart));
 }
 
 function render(){
@@ -67,41 +102,79 @@ function render(){
   const count = document.getElementById('count');
 
   root.innerHTML = '';
-  if(!items || items.length===0){
+  if(!items.length){
     empty.style.display = 'block';
     summary.style.display = 'none';
     count.textContent = '0 items';
     return;
   }
+
   empty.style.display = 'none';
   summary.style.display = 'block';
-  count.textContent = items.length + (items.length>1 ? ' items' : ' item');
+  const totalQty = items.reduce((sum, i) => sum + i.qty, 0);
+  count.textContent = totalQty + (totalQty > 1 ? ' items' : ' item');
 
   let total = 0;
   items.forEach((it, idx) => {
-    total += Number(it.price || 0);
+    total += it.price * it.qty;
 
     const card = document.createElement('div');
     card.className = 'card';
 
     const img = document.createElement('img');
     img.src = it.img || 'https://via.placeholder.com/300x200?text=No+Image';
+    img.alt = it.name;
 
     const details = document.createElement('div');
     details.className = 'details';
-    details.innerHTML = `<div class="title">${it.name}</div>
-                         <div style="color:#bfb8ad">Quantity: 1</div>`;
+    details.innerHTML = `<div class="title">${it.name}</div>`;
+
+    const qtyWrap = document.createElement('div');
+    qtyWrap.className = 'qty-wrap';
+
+    const minusBtn = document.createElement('button');
+    minusBtn.className = 'qty-btn';
+    minusBtn.textContent = '-';
+
+    const qtyVal = document.createElement('div');
+    qtyVal.className = 'qty-val';
+    qtyVal.textContent = String(it.qty);
+
+    const plusBtn = document.createElement('button');
+    plusBtn.className = 'qty-btn';
+    plusBtn.textContent = '+';
+
+    qtyWrap.appendChild(minusBtn);
+    qtyWrap.appendChild(qtyVal);
+    qtyWrap.appendChild(plusBtn);
+    details.appendChild(qtyWrap);
 
     const right = document.createElement('div');
-    right.innerHTML = `<div style="font-weight:800">₹${Number(it.price).toLocaleString('en-IN')}</div>`;
+    right.innerHTML = `<div style="font-weight:800">₹${(it.price * it.qty).toLocaleString('en-IN')}</div>`;
 
     const removeBtn = document.createElement('button');
     removeBtn.className = 'remove';
     removeBtn.textContent = 'Remove';
-    removeBtn.onclick = ()=> {
-      let cart = readCart();
-      cart.splice(idx,1);
-      localStorage.setItem('cart', JSON.stringify(cart));
+
+    removeBtn.onclick = () => {
+      const cart = readCart();
+      cart.splice(idx, 1);
+      writeCart(cart);
+      render();
+    };
+
+    minusBtn.onclick = () => {
+      const cart = readCart();
+      if (cart[idx].qty <= 1) return;
+      cart[idx].qty -= 1;
+      writeCart(cart);
+      render();
+    };
+
+    plusBtn.onclick = () => {
+      const cart = readCart();
+      cart[idx].qty += 1;
+      writeCart(cart);
       render();
     };
 
@@ -109,19 +182,28 @@ function render(){
     card.appendChild(details);
     card.appendChild(right);
     card.appendChild(removeBtn);
-
     root.appendChild(card);
   });
 
   document.getElementById('totalAmt').textContent = '₹' + total.toLocaleString('en-IN');
+
+  const savedPayment = localStorage.getItem('paymentMethod');
+  if (savedPayment) {
+    const option = document.querySelector(`input[name="paymentMethod"][value="${savedPayment}"]`);
+    if (option) option.checked = true;
+  }
 }
 
 document.getElementById('checkoutBtn').addEventListener('click', ()=> {
-  // go to your existing checkout page
+  const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
+  if (!selectedPayment){
+    alert('Please choose a payment option');
+    return;
+  }
+  localStorage.setItem('paymentMethod', selectedPayment.value);
   window.location.href = 'checkout.html';
 });
 
-// initial render
 render();
 </script>
 
