@@ -1,5 +1,4 @@
-<!doctype html>
-
+So I have told you this is my website and how many things in this website I did it by my own and with the codes, but I have a small modifications which only you can do it. So you can show a see a notification that added to cart. So I want to make the notification very unique with luxurious style and design with black and gold glowing notification with animations which will fade. It should look very good, luxurious and with good animations. So whenever the user is adding to cart, the notification should come as added to cart. So I want you to do that. I will give my full main code, so just to do what I said, just modify the notification code, but please don't even touch the CSS of the code or please don't even change any other code or CSS. I am saying it again and again, please don't touch any CSS or don't change any CSS or code, just the notification. Remember.<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -74,7 +73,6 @@ footer{ text-align:center; margin:50px 0; font-size:14px; color:#aaa; }
 @keyframes lockSpin{ from{transform:rotateY(0)} to{transform:rotateY(360deg)} }
 #loadingText{ color:var(--gold); font-weight:700; margin-top:8px; font-size:18px; }
 </style>
-
 </head>
 
 <body>
@@ -136,45 +134,59 @@ Premium menswear and accessories.
 <script>
 const sb = window.supabase.createClient(
 "https://vxcoanhvcglxbpxsvsxv.supabase.co",
-"YOUR_PUBLIC_KEY"
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Y29hbmh2Y2dseGJweHN2c3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MTk4NjgsImV4cCI6MjA4MzE5NTg2OH0.RIx4Yfy74CWWr7vvoh2R5CcFn9Mz6oTw3nsNWkzuRTw"
 );
+
+
 
 async function loadProducts(){
   const container = document.getElementById('productsContainer');
   container.innerHTML = '<p style="color:#bbb">Loading products...</p>';
 
-  const { data } = await sb
+  const { data, error } = await sb
     .from('products')
     .select('id, product_name, product_price, product_size, image_url')
     .order('id', { ascending: false });
 
-  container.innerHTML = '';
+  if(error){
+    console.error(error);
+    container.innerHTML = '<p style="color:#ff8b8b">Unable to load products right now.</p>';
+    return;
+  }
 
+  if(!data || data.length === 0){
+    container.innerHTML = '<p style="color:#bbb">No products yet. Check back soon.</p>';
+    return;
+  }
+
+  container.innerHTML = '';
   data.forEach((p) => {
     const card = document.createElement('article');
     card.className = 'product-card';
-
+    const sizeText = p.product_size ? `<div style="color:#bfb8ad;font-size:13px;margin-top:4px">Size: ${p.product_size}</div>` : '';
     card.innerHTML = `
       <div class="product-img-box">
-        <img src="${p.image_url}">
+        <img src="${p.image_url}" alt="${p.product_name}">
       </div>
       <div class="product-meta">
         <div>
           <div class="title">${p.product_name}</div>
+          ${sizeText}
         </div>
         <div>
-          <span class="price">₹${p.product_price}</span>
+          <span class="price">₹${Number(p.product_price || 0).toLocaleString('en-IN')}</span>
           <button class="buy-btn">Add</button>
         </div>
       </div>
     `;
 
-    card.querySelector(".buy-btn").onclick=()=>addToCart({
-      id:p.id,
-      name:p.product_name,
-      price:p.product_price,
-      img:p.image_url
-    });
+    const addBtn = card.querySelector('.buy-btn');
+    addBtn.addEventListener('click', () => addToCart({
+      id: p.id,
+      name: p.product_name,
+      price: Number(p.product_price || 0),
+      img: p.image_url
+    }));
 
     container.appendChild(card);
   });
@@ -184,47 +196,100 @@ function addToCart(item){
   const cart = JSON.parse(localStorage.getItem('cart') || '[]');
   cart.push(item);
   localStorage.setItem('cart', JSON.stringify(cart));
-  showLuxuryNotification("Added to cart");
+  alert('Added to cart');
 }
 
 loadProducts();
 
-/* Luxury Notification */
+/* ================= ADMIN LOGIC (UPDATED ONLY THIS) ================= */
 
-function showLuxuryNotification(text){
+const adminBtn = document.getElementById('adminBtn');
+const adminModal = document.getElementById('adminModal');
+const adminBox = document.getElementById('adminBox');
+const adminPass = document.getElementById('adminPass');
+const adminEnter = document.getElementById('adminEnter');
+const adminClose = document.getElementById('adminClose');
+const adminError = document.getElementById('adminError');
+const fingerprintBtn = document.getElementById('fingerprintBtn');
+const loadingScreen = document.getElementById('loadingScreen');
+const loaderRing = document.getElementById('loaderRing');
+const lock3d = document.getElementById('lock3d');
+const loadingText = document.getElementById('loadingText');
 
-const n=document.createElement("div");
-n.innerText=text;
+const REAL_PASSWORD = "elitetarun2011";
+const MAX_ATTEMPTS = 3;
+const BLOCK_DURATION = 14 * 60 * 60 * 1000;
 
-n.style.position="fixed";
-n.style.top="30px";
-n.style.right="30px";
-n.style.padding="14px 26px";
-n.style.background="linear-gradient(145deg,#0a0a0a,#141414)";
-n.style.border="1px solid rgba(212,175,55,0.35)";
-n.style.color="#d4af37";
-n.style.fontWeight="600";
-n.style.borderRadius="12px";
-n.style.boxShadow="0 0 18px rgba(212,175,55,0.45), inset 0 0 8px rgba(212,175,55,0.15)";
-n.style.zIndex="5000";
-n.style.opacity="0";
-n.style.transform="translateY(-10px) scale(.95)";
-n.style.transition="all .45s ease";
+let attemptsLeft = parseInt(localStorage.getItem('admin_attempts') || MAX_ATTEMPTS, 10);
+let blockedUntil = parseInt(localStorage.getItem('admin_block_until') || 0);
 
-document.body.appendChild(n);
-
-setTimeout(()=>{
-n.style.opacity="1";
-n.style.transform="translateY(0) scale(1)";
-},50);
-
-setTimeout(()=>{
-n.style.opacity="0";
-n.style.transform="translateY(-10px) scale(.95)";
-setTimeout(()=>n.remove(),400);
-},2500);
-
+if (blockedUntil && Date.now() > blockedUntil) {
+localStorage.removeItem('admin_block_until');
+localStorage.setItem('admin_attempts', MAX_ATTEMPTS);
+attemptsLeft = MAX_ATTEMPTS;
+blockedUntil = 0;
 }
+
+adminBtn.onclick = () => {
+adminModal.style.display = 'flex';
+adminError.style.display = 'none';
+adminPass.value = '';
+adminPass.disabled = false;
+adminEnter.disabled = false;
+if (blockedUntil && Date.now() < blockedUntil) blockUser();
+};
+
+adminClose.onclick = () => adminModal.style.display = 'none';
+fingerprintBtn.onclick = () => adminPass.focus();
+
+adminEnter.onclick = () => {
+const val = adminPass.value.trim();
+if (!val) return;
+
+if (blockedUntil && Date.now() < blockedUntil) return blockUser();
+
+if (val === REAL_PASSWORD) {
+localStorage.setItem('admin_attempts', MAX_ATTEMPTS);
+localStorage.removeItem('admin_block_until');
+showLoadingAndRedirect();
+} else {
+attemptsLeft--;
+localStorage.setItem('admin_attempts', attemptsLeft);
+if (attemptsLeft <= 0) {
+const until = Date.now() + BLOCK_DURATION;
+localStorage.setItem('admin_block_until', until);
+blockUser();
+} else {
+showWrong(attemptsLeft);
+}
+}
+};
+
+function showWrong(left){
+adminError.textContent = `Wrong password — ${left} attempts left`;
+adminError.style.display = 'block';
+adminBox.style.animation = 'errorFlash 0.45s ease';
+setTimeout(()=> adminBox.style.animation = '', 460);
+}
+
+function blockUser(){
+adminError.textContent = "Access Blocked — Try again after 2 days";
+adminError.style.display = 'block';
+adminPass.disabled = true;
+adminEnter.disabled = true;
+adminBox.style.animation = 'errorFlash 0.7s ease';
+}
+
+function showLoadingAndRedirect(){
+adminModal.style.display = 'none';
+loadingScreen.style.display = 'flex';
+loaderRing.style.display = 'none';
+lock3d.style.display = 'block';
+loadingText.textContent = 'Welcome Admin…';
+setTimeout(()=> window.location.href='admin.html',1300);
+}
+
+/* ================= END ADMIN UPDATE ================= */
 </script>
 
 </body>
