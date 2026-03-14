@@ -2,19 +2,65 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Checkout - EliteWear</title>
 
   <style>
+    :root {
+      --bg: #060606;
+      --card: #151515;
+      --card-2: #101010;
+      --line: rgba(212, 175, 55, 0.22);
+      --text: #f5f5f5;
+      --muted: #bbb5a9;
+      --gold: #d4af37;
+      --gold-soft: #f5de92;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-      font-family: Arial;
-      background: #111;
-      color: white;
-      padding: 20px;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: radial-gradient(circle at top, #1b1b1b 0%, #090909 40%, #050505 100%);
+      color: var(--text);
+      margin: 0;
+      padding: 24px;
+    }
+
+    .wrapper {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 30px;
+      letter-spacing: 0.5px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      background: linear-gradient(165deg, var(--card), var(--card-2));
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 16px 38px rgba(0,0,0,0.55);
+    }
+
+    .section-title {
+      font-size: 18px;
+      margin: 0 0 12px;
+      color: var(--gold-soft);
     }
 
     .item {
-      border-bottom: 1px solid #444;
-      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 12px 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -24,63 +70,86 @@
     .item-left {
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex: 1;
+      gap: 12px;
       min-width: 0;
     }
 
     .item img {
-      width: 70px;
-      height: 70px;
+      width: 72px;
+      height: 72px;
       object-fit: cover;
-      border-radius: 8px;
+      border-radius: 10px;
       background: #222;
+      border: 1px solid rgba(255,255,255,0.08);
     }
 
-    .item-name {
-      font-weight: bold;
+    .item-name { font-weight: 700; }
+    .item-meta { color: var(--muted); font-size: 13px; }
+
+    .item-right {
+      text-align: right;
+      min-width: 110px;
     }
+
+    .item-total { font-weight: 700; }
 
     .qty-wrap {
       display: flex;
       align-items: center;
       gap: 8px;
+      margin-top: 6px;
     }
 
     .qty-btn {
       width: 28px;
       height: 28px;
       border: none;
-      border-radius: 6px;
-      background: #2c2c2c;
+      border-radius: 8px;
+      background: #2b2b2b;
       color: #fff;
       font-weight: 700;
       cursor: pointer;
-      margin: 0;
       padding: 0;
     }
 
     .qty-val { min-width: 20px; text-align: center; }
 
-    input, button {
-      padding: 10px;
-      margin: 8px;
-      width: 90%;
-      max-width: 300px;
+    .line {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+      color: var(--muted);
     }
 
-    button {
-      background: gold;
+    .line strong { color: var(--text); }
+
+    .big-total {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--gold-soft);
+    }
+
+    .buy-btn {
+      width: 100%;
+      margin-top: 14px;
       border: none;
-      font-weight: bold;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: 800;
       cursor: pointer;
+      color: #000;
+      background: linear-gradient(90deg, var(--gold), #f6e2a2);
     }
 
     #loginBox {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.65);
+      background: rgba(0,0,0,0.72);
       align-items: center;
       justify-content: center;
       z-index: 999;
@@ -88,36 +157,76 @@
 
     .login-card {
       width: 92%;
-      max-width: 420px;
-      background: #222;
-      border-radius: 12px;
+      max-width: 460px;
+      background: linear-gradient(165deg, #1f1f1f, #141414);
+      border: 1px solid rgba(212,175,55,0.35);
+      border-radius: 14px;
       padding: 18px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+      box-shadow: 0 12px 34px rgba(0,0,0,0.6);
       text-align: center;
     }
 
+    .login-card h3 { margin-top: 2px; color: var(--gold-soft); }
+
     .login-row { margin-top: 8px; }
+
+    .login-row input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: #0f0f0f;
+      color: #fff;
+    }
+
+    .login-submit {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 9px;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(90deg, var(--gold), #efd98f);
+      color: #000;
+    }
+
+    @media (max-width: 880px) {
+      .grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 
 <body>
+<div class="wrapper">
+  <h2>Secure Checkout</h2>
 
-<h2>Checkout</h2>
+  <div class="grid">
+    <div class="panel">
+      <h3 class="section-title">Items in your order</h3>
+      <div id="cartBox"></div>
+    </div>
 
-<div id="cartBox"></div>
-
-<h3 id="total"></h3>
-
-<button onclick="buy()">Buy</button>
+    <div class="panel">
+      <h3 class="section-title">Order Summary</h3>
+      <div id="summaryLines"></div>
+      <div class="big-total">
+        <span>Total</span>
+        <span id="total">₹0</span>
+      </div>
+      <button class="buy-btn" onclick="buy()">Buy Now</button>
+    </div>
+  </div>
+</div>
 
 <div id="loginBox">
   <div class="login-card">
     <h3>Sign In to Continue</h3>
     <div class="login-row"><input id="name" placeholder="Name"></div>
-    <div class="login-row"><input id="email" placeholder="Gmail"></div>
+    <div class="login-row"><input id="email" type="email" placeholder="Email"></div>
     <div class="login-row"><input id="phone" placeholder="Phone"></div>
     <div class="login-row"><input id="address" placeholder="Address"></div>
-    <button onclick="submitLogin()">Confirm</button>
+    <button class="login-submit" onclick="submitLogin()">One-Time Sign In</button>
   </div>
 </div>
 
@@ -157,6 +266,12 @@ function writeCart(items) {
   localStorage.setItem("cart", JSON.stringify(items));
 }
 
+function maskCard(number) {
+  const clean = String(number || '').replace(/\D/g, '');
+  if (clean.length < 4) return '****';
+  return '•••• •••• •••• ' + clean.slice(-4);
+}
+
 let cart = readCart();
 let user = JSON.parse(localStorage.getItem("userData") || "null");
 const signedIn = localStorage.getItem("userSignedIn") === "true";
@@ -166,11 +281,15 @@ function loadCart() {
   cart = readCart();
 
   const box = document.getElementById("cartBox");
-  let total = 0;
+  const summary = document.getElementById("summaryLines");
+  let subtotal = 0;
+  let qtyTotal = 0;
   box.innerHTML = "";
 
   cart.forEach((item, index) => {
-    total += item.price * item.qty;
+    const lineTotal = item.price * item.qty;
+    subtotal += lineTotal;
+    qtyTotal += item.qty;
 
     const row = document.createElement("div");
     row.className = "item";
@@ -179,13 +298,17 @@ function loadCart() {
         <img src="${item.img || "https://via.placeholder.com/200x200?text=No+Image"}" alt="${item.name}">
         <div>
           <div class="item-name">${item.name}</div>
-          <div>Price: ₹${item.price}</div>
+          <div class="item-meta">₹${item.price.toLocaleString("en-IN")} each</div>
+          <div class="qty-wrap">
+            <button class="qty-btn" data-action="minus" data-index="${index}">-</button>
+            <div class="qty-val">${item.qty}</div>
+            <button class="qty-btn" data-action="plus" data-index="${index}">+</button>
+          </div>
         </div>
       </div>
-      <div class="qty-wrap">
-        <button class="qty-btn" data-action="minus" data-index="${index}">-</button>
-        <div class="qty-val">${item.qty}</div>
-        <button class="qty-btn" data-action="plus" data-index="${index}">+</button>
+      <div class="item-right">
+        <div class="item-total">₹${lineTotal.toLocaleString("en-IN")}</div>
+        <div class="item-meta">Item total</div>
       </div>
     `;
     box.appendChild(row);
@@ -195,8 +318,22 @@ function loadCart() {
     box.innerHTML = "<p>Your cart is empty.</p>";
   }
 
-  document.getElementById("total").innerText = "Total: ₹" + total.toLocaleString("en-IN");
-  return total;
+  const paymentMethod = localStorage.getItem("paymentMethod") || "Not selected";
+  const paymentDetails = JSON.parse(localStorage.getItem("paymentDetails") || "{}");
+
+  let paymentInfo = "Not selected";
+  if (paymentMethod === 'UPI') paymentInfo = paymentDetails.upiId || 'UPI';
+  if (paymentMethod === 'Card') paymentInfo = maskCard(paymentDetails.cardNumber);
+  if (paymentMethod === 'COD') paymentInfo = 'Cash on Delivery';
+
+  summary.innerHTML = `
+    <div class="line"><span>Items (${qtyTotal})</span><strong>₹${subtotal.toLocaleString("en-IN")}</strong></div>
+    <div class="line"><span>Payment Method</span><strong>${paymentMethod}</strong></div>
+    <div class="line"><span>Payment Details</span><strong>${paymentInfo}</strong></div>
+  `;
+
+  document.getElementById("total").innerText = "₹" + subtotal.toLocaleString("en-IN");
+  return subtotal;
 }
 
 document.addEventListener("click", (e) => {
@@ -301,7 +438,8 @@ async function placeOrder() {
         user,
         cart: readCart(),
         total,
-        payment_method: localStorage.getItem("paymentMethod") || "Not specified"
+        payment_method: localStorage.getItem("paymentMethod") || "Not specified",
+        payment_details: JSON.parse(localStorage.getItem("paymentDetails") || "{}")
       })
     });
 
