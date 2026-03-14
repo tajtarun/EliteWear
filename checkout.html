@@ -36,6 +36,7 @@
       margin-top: 0;
       font-size: 30px;
       letter-spacing: 0.5px;
+      text-shadow: 0 0 18px rgba(212,175,55,0.3);
     }
 
     .grid {
@@ -49,7 +50,7 @@
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 16px;
-      box-shadow: 0 16px 38px rgba(0,0,0,0.55);
+      box-shadow: 0 16px 38px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,175,55,0.08) inset;
     }
 
     .section-title {
@@ -143,6 +144,7 @@
       cursor: pointer;
       color: #000;
       background: linear-gradient(90deg, var(--gold), #f6e2a2);
+      box-shadow: 0 6px 24px rgba(212,175,55,0.35);
     }
 
     #loginBox {
@@ -159,14 +161,15 @@
       width: 92%;
       max-width: 460px;
       background: linear-gradient(165deg, #1f1f1f, #141414);
-      border: 1px solid rgba(212,175,55,0.35);
+      border: 1px solid rgba(212,175,55,0.4);
       border-radius: 14px;
       padding: 18px;
-      box-shadow: 0 12px 34px rgba(0,0,0,0.6);
+      box-shadow: 0 12px 34px rgba(0,0,0,0.6), 0 0 28px rgba(212,175,55,0.18);
       text-align: center;
     }
 
     .login-card h3 { margin-top: 2px; color: var(--gold-soft); }
+    .login-card p { margin: 6px 0 8px; color: var(--muted); font-size: 13px; }
 
     .login-row { margin-top: 8px; }
 
@@ -190,6 +193,8 @@
       background: linear-gradient(90deg, var(--gold), #efd98f);
       color: #000;
     }
+
+    .muted-mini { color: var(--muted); font-size: 12px; margin-top: 8px; }
 
     @media (max-width: 880px) {
       .grid { grid-template-columns: 1fr; }
@@ -222,11 +227,13 @@
 <div id="loginBox">
   <div class="login-card">
     <h3>Sign In to Continue</h3>
+    <p>One-time sign-in. Next time, you will be automatically signed in.</p>
     <div class="login-row"><input id="name" placeholder="Name"></div>
     <div class="login-row"><input id="email" type="email" placeholder="Email"></div>
     <div class="login-row"><input id="phone" placeholder="Phone"></div>
     <div class="login-row"><input id="address" placeholder="Address"></div>
     <button class="login-submit" onclick="submitLogin()">One-Time Sign In</button>
+    <div class="muted-mini">Your profile is saved securely.</div>
   </div>
 </div>
 
@@ -268,14 +275,23 @@ function writeCart(items) {
 
 function maskCard(number) {
   const clean = String(number || '').replace(/\D/g, '');
-  if (clean.length < 4) return '****';
+  if (clean.length < 4) return '••••';
   return '•••• •••• •••• ' + clean.slice(-4);
+}
+
+function isPersistedSignedIn() {
+  try {
+    const payload = JSON.parse(localStorage.getItem("userData") || "null");
+    if (!payload) return false;
+    return Boolean(payload.name && payload.email && payload.phone && payload.address && localStorage.getItem("userSignedIn") === "true");
+  } catch {
+    return false;
+  }
 }
 
 let cart = readCart();
 let user = JSON.parse(localStorage.getItem("userData") || "null");
-const signedIn = localStorage.getItem("userSignedIn") === "true";
-if (!signedIn) user = null;
+if (!isPersistedSignedIn()) user = null;
 
 function loadCart() {
   cart = readCart();
@@ -360,34 +376,42 @@ function buy() {
 
   if (!user) {
     document.getElementById("loginBox").style.display = "flex";
-  } else {
-    placeOrder();
+    return;
   }
+
+  placeOrder();
 }
 
-function submitLogin() {
+function validateUserInput(userInfo) {
+  if (!userInfo.name || !userInfo.email || !userInfo.phone || !userInfo.address) return false;
+  if (!/^\S+@\S+\.\S+$/.test(userInfo.email)) return false;
+  if (!/^\d{10,15}$/.test(userInfo.phone.replace(/\D/g, ''))) return false;
+  return true;
+}
+
+async function submitLogin() {
   const name = document.getElementById("name").value.trim();
   const email = document.getElementById("email").value.trim();
   const phone = document.getElementById("phone").value.trim();
   const address = document.getElementById("address").value.trim();
 
-  if (!name || !email || !phone || !address) {
-    alert("Fill all fields");
+  const profile = { name, email, phone, address };
+
+  if (!validateUserInput(profile)) {
+    alert("Please enter valid name, email, phone, and address.");
     return;
   }
 
-  user = { name, email, phone, address };
-  localStorage.setItem("userData", JSON.stringify(user));
-  localStorage.setItem("userSignedIn", "true");
-  document.getElementById("loginBox").style.display = "none";
-
-  saveSignedInUser(user)
-    .catch(() => {
-      // keep order flow alive even if signin save failed
-    })
-    .finally(() => {
-      placeOrder();
-    });
+  try {
+    const savedUser = await saveSignedInUser(profile);
+    user = savedUser;
+    localStorage.setItem("userData", JSON.stringify(savedUser));
+    localStorage.setItem("userSignedIn", "true");
+    document.getElementById("loginBox").style.display = "none";
+    placeOrder();
+  } catch (error) {
+    alert("Sign-in server not reachable. Please try again in a moment.");
+  }
 }
 
 async function fetchWithFallback(path, options) {
@@ -416,17 +440,22 @@ async function saveSignedInUser(userInfo) {
     throw new Error("Sign-in save failed");
   }
 
-  const payload = await res.json();
-  if (payload?.user_id) {
-    user = { ...user, user_id: payload.user_id };
-    localStorage.setItem("userData", JSON.stringify(user));
-  }
+  const payload = await res.json().catch(() => ({}));
+  return {
+    ...userInfo,
+    ...(payload?.user_id ? { user_id: payload.user_id } : {})
+  };
 }
 
 async function placeOrder() {
   const total = loadCart();
   if (!Number(total) || total <= 0) {
     alert("Cart total is invalid. Please update quantities and try again.");
+    return;
+  }
+
+  if (!user) {
+    document.getElementById("loginBox").style.display = "flex";
     return;
   }
 
