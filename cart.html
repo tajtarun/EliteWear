@@ -18,7 +18,7 @@
 body{margin:0;background:radial-gradient(circle at 10% 10%,#1a1a1a 0,#090909 40%,#040404 100%);color:#fff;font-family:Poppins}
 .container{max-width:980px;margin:28px auto;padding:18px}
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.header h1{margin:0;font-size:24px;letter-spacing:.4px}
+.header h1{margin:0;font-size:24px;letter-spacing:.4px;text-shadow:0 0 20px rgba(212,175,55,.28)}
 .list{display:flex;flex-direction:column;gap:12px}
 .card{display:flex;gap:12px;background:linear-gradient(160deg,#171717,#101010);padding:12px;border-radius:14px;align-items:center;box-shadow:0 12px 32px rgba(0,0,0,.55);border:1px solid rgba(212,175,55,.08)}
 .card img{width:96px;height:76px;object-fit:cover;border-radius:8px}
@@ -28,8 +28,8 @@ body{margin:0;background:radial-gradient(circle at 10% 10%,#1a1a1a 0,#090909 40%
 .qty-wrap{display:flex;align-items:center;gap:10px;margin-top:8px}
 .qty-btn{background:#232323;border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-weight:800}
 .qty-val{min-width:22px;text-align:center;font-weight:700}
-.payment{margin-top:14px;background:linear-gradient(160deg,#161616,#0d0d0d);padding:16px;border-radius:12px;border:1px solid rgba(212,175,55,.15)}
-.payment h3{margin:0 0 8px;font-size:16px}
+.payment{margin-top:14px;background:linear-gradient(160deg,#161616,#0d0d0d);padding:16px;border-radius:12px;border:1px solid rgba(212,175,55,.2);box-shadow:0 0 26px rgba(212,175,55,.1)}
+.payment h3{margin:0 0 8px;font-size:16px;color:var(--gold-soft)}
 .payment label{display:block;margin-top:8px;color:#ddd}
 .payment-details{margin-top:14px;background:var(--card-2);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.06)}
 .payment-details h4{margin:0 0 10px;color:var(--gold-soft)}
@@ -38,10 +38,11 @@ body{margin:0;background:radial-gradient(circle at 10% 10%,#1a1a1a 0,#090909 40%
 .field input,.field select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:#0f0f0f;color:#fff;font-family:inherit}
 .field small{color:#b7b1a5}
 .summary{margin-top:18px;background:#0e0e0e;padding:14px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(212,175,55,.12)}
-.checkout{background:linear-gradient(90deg,var(--gold),#f3e0a8);border:none;padding:10px 16px;border-radius:10px;font-weight:800;cursor:pointer;color:#000}
+.checkout{background:linear-gradient(90deg,var(--gold),#f3e0a8);border:none;padding:10px 16px;border-radius:10px;font-weight:800;cursor:pointer;color:#000;box-shadow:0 8px 22px rgba(212,175,55,.28)}
 .empty{padding:40px;text-align:center;color:var(--muted);background:var(--card);border-radius:12px}
 .link-back{display:block;margin-top:12px;color:var(--gold);text-decoration:none}
 .hidden{display:none}
+.helper{color:var(--muted);font-size:12px}
 @media(max-width:720px){
   .card{flex-direction:row}
   .card img{width:76px;height:60px}
@@ -86,6 +87,7 @@ body{margin:0;background:radial-gradient(circle at 10% 10%,#1a1a1a 0,#090909 40%
         </div>
         <div class="field">
           <input id="cardNumber" type="text" inputmode="numeric" maxlength="19" placeholder="Card number">
+          <small class="helper">We only show masked card in checkout summary.</small>
         </div>
         <div class="field-row">
           <div class="field">
@@ -273,12 +275,17 @@ function validatePaymentDetails(paymentMethod) {
 
   if (paymentMethod === 'Card') {
     const cardName = document.getElementById('cardName').value.trim();
-    const cardNumber = document.getElementById('cardNumber').value.replace(/\s+/g, '');
+    const cardNumberRaw = document.getElementById('cardNumber').value;
+    const cardNumber = cardNumberRaw.replace(/\D/g, '');
     const cardExpiry = document.getElementById('cardExpiry').value.trim();
     const cardCvv = document.getElementById('cardCvv').value.trim();
 
-    if (!cardName || cardNumber.length < 12 || !/^\d+$/.test(cardNumber) || !/^(0[1-9]|1[0-2])\/\d{2}$/.test(cardExpiry) || !/^\d{3,4}$/.test(cardCvv)) {
-      alert('Please enter valid card details.');
+    const validCardNumber = /^\d{12,19}$/.test(cardNumber);
+    const validExpiry = /^(0[1-9]|1[0-2])\/\d{2}$/.test(cardExpiry);
+    const validCvv = /^\d{3,4}$/.test(cardCvv);
+
+    if (!cardName || !validCardNumber || !validExpiry || !validCvv) {
+      alert('Please enter valid card details (Name, Card Number, MM/YY, CVV).');
       return null;
     }
 
@@ -295,6 +302,23 @@ function validatePaymentDetails(paymentMethod) {
   localStorage.setItem('paymentDetails', JSON.stringify(paymentDetails));
   return paymentDetails;
 }
+
+const cardNumberInput = document.getElementById('cardNumber');
+const cardExpiryInput = document.getElementById('cardExpiry');
+
+cardNumberInput.addEventListener('input', () => {
+  const digits = cardNumberInput.value.replace(/\D/g, '').slice(0, 19);
+  cardNumberInput.value = digits.replace(/(.{4})/g, '$1 ').trim();
+});
+
+cardExpiryInput.addEventListener('input', () => {
+  const digits = cardExpiryInput.value.replace(/\D/g, '').slice(0, 4);
+  if (digits.length <= 2) {
+    cardExpiryInput.value = digits;
+  } else {
+    cardExpiryInput.value = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  }
+});
 
 document.querySelectorAll('input[name="paymentMethod"]').forEach((radio) => {
   radio.addEventListener('change', (event) => {
