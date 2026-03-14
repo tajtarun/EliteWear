@@ -6,13 +6,21 @@
 <title>🛒 Cart</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0b0b0c;--card:#111;--muted:#bfb8ad;--gold:#d4af37}
-body{margin:0;background:var(--bg);color:#fff;font-family:Poppins}
-.container{max-width:940px;margin:28px auto;padding:18px}
+:root{
+  --bg:#080808;
+  --card:#121212;
+  --card-2:#1a1a1a;
+  --muted:#c8c2b8;
+  --gold:#d4af37;
+  --gold-soft:#f1d982;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 10% 10%,#1a1a1a 0,#090909 40%,#040404 100%);color:#fff;font-family:Poppins}
+.container{max-width:980px;margin:28px auto;padding:18px}
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.header h1{margin:0;font-size:22px}
+.header h1{margin:0;font-size:24px;letter-spacing:.4px}
 .list{display:flex;flex-direction:column;gap:12px}
-.card{display:flex;gap:12px;background:var(--card);padding:12px;border-radius:12px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+.card{display:flex;gap:12px;background:linear-gradient(160deg,#171717,#101010);padding:12px;border-radius:14px;align-items:center;box-shadow:0 12px 32px rgba(0,0,0,.55);border:1px solid rgba(212,175,55,.08)}
 .card img{width:96px;height:76px;object-fit:cover;border-radius:8px}
 .details{flex:1}
 .title{font-weight:700;margin-bottom:6px}
@@ -20,13 +28,25 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Poppins}
 .qty-wrap{display:flex;align-items:center;gap:10px;margin-top:8px}
 .qty-btn{background:#232323;border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-weight:800}
 .qty-val{min-width:22px;text-align:center;font-weight:700}
-.payment{margin-top:14px;background:#111;padding:12px;border-radius:10px}
+.payment{margin-top:14px;background:linear-gradient(160deg,#161616,#0d0d0d);padding:16px;border-radius:12px;border:1px solid rgba(212,175,55,.15)}
+.payment h3{margin:0 0 8px;font-size:16px}
 .payment label{display:block;margin-top:8px;color:#ddd}
-.summary{margin-top:18px;background:#0e0e0e;padding:14px;border-radius:12px;display:flex;justify-content:space-between;align-items:center}
+.payment-details{margin-top:14px;background:var(--card-2);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.06)}
+.payment-details h4{margin:0 0 10px;color:var(--gold-soft)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{margin-bottom:10px}
+.field input,.field select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:#0f0f0f;color:#fff;font-family:inherit}
+.field small{color:#b7b1a5}
+.summary{margin-top:18px;background:#0e0e0e;padding:14px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(212,175,55,.12)}
 .checkout{background:linear-gradient(90deg,var(--gold),#f3e0a8);border:none;padding:10px 16px;border-radius:10px;font-weight:800;cursor:pointer;color:#000}
 .empty{padding:40px;text-align:center;color:var(--muted);background:var(--card);border-radius:12px}
 .link-back{display:block;margin-top:12px;color:var(--gold);text-decoration:none}
-@media(max-width:720px){ .card{flex-direction:row} .card img{width:76px;height:60px}}
+.hidden{display:none}
+@media(max-width:720px){
+  .card{flex-direction:row}
+  .card img{width:76px;height:60px}
+  .field-row{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -46,10 +66,36 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Poppins}
 
   <div id="summary" style="display:none">
     <div class="payment">
-      <div style="font-weight:700">Select Payment Option</div>
+      <h3>Select Payment Option</h3>
       <label><input type="radio" name="paymentMethod" value="UPI"> UPI</label>
       <label><input type="radio" name="paymentMethod" value="Card"> Credit / Debit Card</label>
       <label><input type="radio" name="paymentMethod" value="COD"> Cash on Delivery</label>
+
+      <div id="upiDetails" class="payment-details hidden">
+        <h4>UPI Details</h4>
+        <div class="field">
+          <input id="upiId" type="text" placeholder="Enter UPI ID (example@bank)">
+          <small>Use your linked UPI ID for faster checkout.</small>
+        </div>
+      </div>
+
+      <div id="cardDetails" class="payment-details hidden">
+        <h4>Card Details</h4>
+        <div class="field">
+          <input id="cardName" type="text" placeholder="Name on card">
+        </div>
+        <div class="field">
+          <input id="cardNumber" type="text" inputmode="numeric" maxlength="19" placeholder="Card number">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <input id="cardExpiry" type="text" maxlength="5" placeholder="MM/YY">
+          </div>
+          <div class="field">
+            <input id="cardCvv" type="password" inputmode="numeric" maxlength="4" placeholder="CVV">
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="summary">
@@ -92,6 +138,20 @@ function readCart(){
 
 function writeCart(cart){
   localStorage.setItem('cart', JSON.stringify(cart));
+}
+
+function setPaymentSections(paymentMethod) {
+  document.getElementById('upiDetails').classList.toggle('hidden', paymentMethod !== 'UPI');
+  document.getElementById('cardDetails').classList.toggle('hidden', paymentMethod !== 'Card');
+}
+
+function restorePaymentDetails() {
+  const paymentDetails = JSON.parse(localStorage.getItem('paymentDetails') || '{}');
+  document.getElementById('upiId').value = paymentDetails.upiId || '';
+  document.getElementById('cardName').value = paymentDetails.cardName || '';
+  document.getElementById('cardNumber').value = paymentDetails.cardNumber || '';
+  document.getElementById('cardExpiry').value = paymentDetails.cardExpiry || '';
+  document.getElementById('cardCvv').value = paymentDetails.cardCvv || '';
 }
 
 function render(){
@@ -190,9 +250,57 @@ function render(){
   const savedPayment = localStorage.getItem('paymentMethod');
   if (savedPayment) {
     const option = document.querySelector(`input[name="paymentMethod"][value="${savedPayment}"]`);
-    if (option) option.checked = true;
+    if (option) {
+      option.checked = true;
+      setPaymentSections(savedPayment);
+    }
   }
+
+  restorePaymentDetails();
 }
+
+function validatePaymentDetails(paymentMethod) {
+  const paymentDetails = {};
+
+  if (paymentMethod === 'UPI') {
+    const upiId = document.getElementById('upiId').value.trim();
+    if (!/^[\w.-]+@[\w.-]+$/.test(upiId)) {
+      alert('Please enter a valid UPI ID.');
+      return null;
+    }
+    paymentDetails.upiId = upiId;
+  }
+
+  if (paymentMethod === 'Card') {
+    const cardName = document.getElementById('cardName').value.trim();
+    const cardNumber = document.getElementById('cardNumber').value.replace(/\s+/g, '');
+    const cardExpiry = document.getElementById('cardExpiry').value.trim();
+    const cardCvv = document.getElementById('cardCvv').value.trim();
+
+    if (!cardName || cardNumber.length < 12 || !/^\d+$/.test(cardNumber) || !/^(0[1-9]|1[0-2])\/\d{2}$/.test(cardExpiry) || !/^\d{3,4}$/.test(cardCvv)) {
+      alert('Please enter valid card details.');
+      return null;
+    }
+
+    paymentDetails.cardName = cardName;
+    paymentDetails.cardNumber = cardNumber;
+    paymentDetails.cardExpiry = cardExpiry;
+    paymentDetails.cardCvv = cardCvv;
+  }
+
+  if (paymentMethod === 'COD') {
+    paymentDetails.mode = 'Cash on Delivery';
+  }
+
+  localStorage.setItem('paymentDetails', JSON.stringify(paymentDetails));
+  return paymentDetails;
+}
+
+document.querySelectorAll('input[name="paymentMethod"]').forEach((radio) => {
+  radio.addEventListener('change', (event) => {
+    setPaymentSections(event.target.value);
+  });
+});
 
 document.getElementById('checkoutBtn').addEventListener('click', ()=> {
   const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
@@ -200,6 +308,10 @@ document.getElementById('checkoutBtn').addEventListener('click', ()=> {
     alert('Please choose a payment option');
     return;
   }
+
+  const details = validatePaymentDetails(selectedPayment.value);
+  if (!details) return;
+
   localStorage.setItem('paymentMethod', selectedPayment.value);
   window.location.href = 'checkout.html';
 });
