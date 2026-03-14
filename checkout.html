@@ -374,12 +374,15 @@ function buy() {
     return;
   }
 
-  if (!user) {
-    document.getElementById("loginBox").style.display = "flex";
-    return;
-  }
+  openLoginPopup();
+}
 
-  placeOrder();
+function openLoginPopup() {
+  document.getElementById("name").value = user?.name || "";
+  document.getElementById("email").value = user?.email || "";
+  document.getElementById("phone").value = user?.phone || "";
+  document.getElementById("address").value = user?.address || "";
+  document.getElementById("loginBox").style.display = "flex";
 }
 
 function validateUserInput(userInfo) {
@@ -402,8 +405,10 @@ async function submitLogin() {
     return;
   }
 
+  const isSameUser = user && user.email === profile.email && user.name === profile.name && user.phone === profile.phone && user.address === profile.address;
+
   try {
-    const savedUser = await saveSignedInUser(profile);
+    const savedUser = isSameUser ? user : await saveSignedInUser(profile);
     user = savedUser;
     localStorage.setItem("userData", JSON.stringify(savedUser));
     localStorage.setItem("userSignedIn", "true");
@@ -488,6 +493,10 @@ async function placeOrder() {
 }
 
 loadCart();
+
+if (!isPersistedSignedIn() && readCart().length) {
+  openLoginPopup();
+}
 </script>
 
 </body>
