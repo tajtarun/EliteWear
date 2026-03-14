@@ -218,7 +218,7 @@ const loadingText = document.getElementById('loadingText');
 
 const REAL_PASSWORD = "elitetarun2011";
 const MAX_ATTEMPTS = 3;
-const BLOCK_DURATION = 2 * 24 * 60 * 60 * 1000;
+const BLOCK_DURATION = 14 * 60 * 60 * 1000;
 
 let attemptsLeft = parseInt(localStorage.getItem('admin_attempts') || MAX_ATTEMPTS, 10);
 let blockedUntil = parseInt(localStorage.getItem('admin_block_until') || 0);
