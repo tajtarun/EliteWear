@@ -1,8 +1,7 @@
-
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=1280">
 <title>EliteWear — Luxury Menswear & Timepieces</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -10,11 +9,12 @@
 <style>
 :root{ --bg:#0b0b0c; --card:#0f0f10; --muted:#bfb8ad; --gold:#d4af37; }
 *{box-sizing:border-box;}
-body{ margin:0; font-family:'Poppins',sans-serif; background:#0b0b0c; color:#eee; }
+body{ margin:0; font-family:'Poppins',sans-serif; background:#0b0b0c; color:#eee; overflow-x:hidden; }
 
 /* HEADER */
-header{ display:flex; justify-content:space-between; align-items:center; padding:18px 28px; }
-nav a{ color:var(--gold); margin-left:20px; font-weight:600; text-decoration:none; }
+header{ display:flex; justify-content:space-between; align-items:center; gap:16px; padding:20px 24px; width:100%; }
+nav{ display:flex; flex-wrap:wrap; justify-content:flex-end; gap:18px; margin-left:auto; }
+nav a{ color:var(--gold); margin-left:0; font-weight:700; text-decoration:none; font-size:15px; }
 nav a:hover{ color:#fff; }
 
 /* BRAND */
@@ -22,7 +22,7 @@ nav a:hover{ color:#fff; }
 .brand img{ width:48px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.5); }
 
 /* HERO */
-.hero{ width:90%; max-width:1400px; margin:20px auto 0; height:360px; border-radius:22px; position:relative; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.7); }
+.hero{ width:100%; margin:10px 0 0; height:420px; border-radius:0; position:relative; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.7); }
 .hero img{ width:100%; height:100%; object-fit:cover; position:absolute; opacity:0; animation:fade 12s infinite; }
 .hero img:nth-child(1){ animation-delay:0s; }
 .hero img:nth-child(2){ animation-delay:4s; }
@@ -33,9 +33,9 @@ nav a:hover{ color:#fff; }
 .hero-text p{margin:4px 0 0;font-size:16px;color:#d4d4d4;}
 
 /* PRODUCTS */
-.products{ width:90%; max-width:1300px; margin:40px auto; display:flex; flex-wrap:wrap; gap:30px; justify-content:center; }
+.products{ width:100%; margin:28px 0 40px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; padding:0 24px; }
 
-.product-card{ background:#111; padding:14px; width:340px; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,0.6); transition:transform .22s, box-shadow .22s; }
+.product-card{ background:#111; padding:14px; width:100%; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,0.6); transition:transform .22s, box-shadow .22s; }
 .product-card:hover{ transform:translateY(-6px); box-shadow:0 16px 50px rgba(0,0,0,0.85); }
 
 .product-img-box{ width:100%; height:220px; background:#000; border-radius:12px; overflow:hidden; border: 1px solid rgba(255,255,255,0.03); }
@@ -48,6 +48,27 @@ nav a:hover{ color:#fff; }
 .buy-btn{ background:var(--gold); border:none; padding:6px 12px; border-radius:8px; font-weight:700; cursor:pointer; color:#000; }
 
 footer{ text-align:center; margin:50px 0; font-size:14px; color:#aaa; }
+
+@media (max-width: 1100px){
+  .hero{ height:360px; }
+  .products{ grid-template-columns:repeat(2,minmax(0,1fr)); padding:0 18px; gap:18px; }
+  .hero-text h2{ font-size:30px; }
+}
+
+@media (max-width: 760px){
+  header{ padding:14px 12px; }
+  .brand img{ width:42px; }
+  .brand h1{ font-size:26px; margin:0; }
+  nav{ gap:10px; justify-content:flex-end; }
+  nav a{ font-size:14px; }
+  .hero{ height:300px; }
+  .hero-text{ left:14px; right:14px; bottom:12px; }
+  .hero-text h2{ font-size:24px; line-height:1.2; }
+  .hero-text p{ font-size:14px; }
+  h3[style]{ width:100% !important; margin:22px 0 0 !important; padding:0 12px; }
+  .products{ grid-template-columns:1fr; gap:14px; padding:0 12px; }
+  .product-img-box{ height:230px; }
+}
 
 /* ADMIN POPUP */
 .modal-bg{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); justify-content:center; align-items:center; z-index:999; backdrop-filter: blur(6px); }
@@ -89,7 +110,7 @@ footer{ text-align:center; margin:50px 0; font-size:14px; color:#aaa; }
 <a href="contact.html">Contact</a>
 <a href="consignment.html">Consignment</a>
 <a id="adminBtn" style="cursor:pointer">Admin</a>
-<a href="cart.html">🛒</a>
+<a href="cart.html">Cart</a>
 </nav>
 </header>
 
@@ -103,7 +124,7 @@ footer{ text-align:center; margin:50px 0; font-size:14px; color:#aaa; }
 </div>
 </div>
 
-<h3 style="width:90%;max-width:1400px;margin:32px auto 0;color:#fff;">Shop Featured Pieces</h3>
+<h3 style="width:100%;margin:32px 0 0;color:#fff;padding:0 24px;">Shop Featured Pieces</h3>
 <div class="products" id="productsContainer"></div>
 
 <footer>
@@ -136,8 +157,6 @@ const sb = window.supabase.createClient(
 "https://vxcoanhvcglxbpxsvsxv.supabase.co",
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Y29hbmh2Y2dseGJweHN2c3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MTk4NjgsImV4cCI6MjA4MzE5NTg2OH0.RIx4Yfy74CWWr7vvoh2R5CcFn9Mz6oTw3nsNWkzuRTw"
 );
-
-
 
 async function loadProducts(){
   const container = document.getElementById('productsContainer');
