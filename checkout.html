@@ -247,6 +247,14 @@ const API_FALLBACKS = [
   "http://127.0.0.1:3000"
 ];
 
+function safeParseJSON(value, fallback) {
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return fallback;
+  }
+}
+
 function parsePrice(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
   const cleaned = String(value ?? '').replace(/[^\d.]/g, '');
@@ -266,7 +274,7 @@ function normalizeCartItem(item) {
 
 function readCart() {
   try {
-    const raw = JSON.parse(localStorage.getItem("cart")) || [];
+    const raw = safeParseJSON(localStorage.getItem("cart") || "[]", []);
     return raw.map(normalizeCartItem);
   } catch (e) {
     return [];
@@ -285,7 +293,7 @@ function maskCard(number) {
 
 function isPersistedSignedIn() {
   try {
-    const payload = JSON.parse(localStorage.getItem("userData") || "null");
+    const payload = safeParseJSON(localStorage.getItem("userData") || "null", null);
     if (!payload) return false;
     return Boolean(payload.name && payload.email && payload.phone && payload.address && localStorage.getItem("userSignedIn") === "true");
   } catch {
@@ -294,7 +302,7 @@ function isPersistedSignedIn() {
 }
 
 let cart = readCart();
-let user = JSON.parse(localStorage.getItem("userData") || "null");
+let user = safeParseJSON(localStorage.getItem("userData") || "null", null);
 if (!isPersistedSignedIn()) user = null;
 
 function loadCart() {
@@ -339,7 +347,7 @@ function loadCart() {
   }
 
   const paymentMethod = localStorage.getItem("paymentMethod") || "Not selected";
-  const paymentDetails = JSON.parse(localStorage.getItem("paymentDetails") || "{}");
+  const paymentDetails = safeParseJSON(localStorage.getItem("paymentDetails") || "{}", {});
 
   let paymentInfo = "Not selected";
   if (paymentMethod === 'UPI') paymentInfo = paymentDetails.upiId || 'UPI';
@@ -426,24 +434,37 @@ async function submitLogin() {
   try {
     const savedUser = await saveSignedInUser(profile);
     user = savedUser;
-    localStorage.setItem("userData", JSON.stringify(savedUser));
-    localStorage.setItem("userSignedIn", "true");
-    document.getElementById("loginBox").style.display = "none";
-    placeOrder();
   } catch (error) {
-    alert("Sign-in server not reachable. Please try again in a moment.");
+    // Graceful fallback for static hosting (GitHub Pages) when backend is unavailable.
+    user = {
+      ...profile,
+      offline_profile: true
+    };
   }
+
+  localStorage.setItem("userData", JSON.stringify(user));
+  localStorage.setItem("userSignedIn", "true");
+  document.getElementById("loginBox").style.display = "none";
+  placeOrder();
 }
 
 async function fetchWithFallback(path, options) {
   let lastError = null;
 
   for (const baseUrl of API_FALLBACKS) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+
     try {
-      const res = await fetch(`${baseUrl}${path}`, options);
+      const res = await fetch(`${baseUrl}${path}`, {
+        ...options,
+        signal: controller.signal
+      });
       return { res, baseUrl };
     } catch (err) {
       lastError = err;
+    } finally {
+      clearTimeout(timer);
     }
   }
 
@@ -485,7 +506,7 @@ async function placeOrder() {
     cart: readCart(),
     total,
     payment_method: localStorage.getItem("paymentMethod") || "Not specified",
-    payment_details: JSON.parse(localStorage.getItem("paymentDetails") || "{}")
+    payment_details: safeParseJSON(localStorage.getItem("paymentDetails") || "{}", {})
   };
 
   try {
@@ -506,7 +527,7 @@ async function placeOrder() {
 
     alert(data.message || `Order failed on ${baseUrl}. Please try again.`);
   } catch (err) {
-    const queue = JSON.parse(localStorage.getItem("pendingOrders") || "[]");
+    const queue = safeParseJSON(localStorage.getItem("pendingOrders") || "[]", []);
     queue.push({ ...orderPayload, queued_at: new Date().toISOString() });
     localStorage.setItem("pendingOrders", JSON.stringify(queue));
     localStorage.removeItem("cart");
