@@ -190,6 +190,53 @@ const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
   : null;
 
+function isMissingColumnError(error, columnName) {
+  const text = String(error?.message || "") + " " + String(error?.details || "");
+  const target = String(columnName || "").toLowerCase();
+  return text.toLowerCase().includes(`column "${target}"`)
+    || text.toLowerCase().includes(`'${target}'`);
+}
+
+async function upsertUserProfile(payload) {
+  const primary = await supabase
+    .from("user_profiles")
+    .upsert(payload, { onConflict: "email" })
+    .select("id, email, full_name, phone, address")
+    .single();
+
+  if (!primary.error) return primary;
+
+  const missingPhone = isMissingColumnError(primary.error, "phone");
+  const missingAddress = isMissingColumnError(primary.error, "address");
+
+  if (!missingPhone && !missingAddress) return primary;
+
+  const minimalPayload = {
+    full_name: payload.full_name,
+    email: payload.email
+  };
+
+  return await supabase
+    .from("user_profiles")
+    .upsert(minimalPayload, { onConflict: "email" })
+    .select("id, email, full_name")
+    .single();
+}
+
+async function insertOrderWithFallback(orderPayload) {
+  const primary = await supabase.from("orders").insert(orderPayload);
+  if (!primary.error) return primary;
+
+  const minimalOrderPayload = {
+    customer_name: orderPayload.customer_name,
+    customer_email: orderPayload.customer_email,
+    items_json: orderPayload.items_json,
+    total_amount: orderPayload.total_amount
+  };
+
+  return await supabase.from("orders").insert(minimalOrderPayload);
+}
+
 
 // ======================================================
 // ================== SIGN-IN ROUTE =====================
@@ -217,11 +264,7 @@ app.post("/signin", async (req, res) => {
       address: String(address).trim()
     };
 
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .upsert(payload, { onConflict: "email" })
-      .select("id, email, full_name, phone, address")
-      .single();
+    const { data, error } = await upsertUserProfile(payload);
 
     if (error) {
       console.error("Sign-in save error:", error);
@@ -249,7 +292,10 @@ app.post("/order", async (req, res) => {
     }
 
     if (!supabase) {
-      return res.json({ success: true, message: "Order accepted" });
+      return res.status(503).json({
+        success: false,
+        message: "Supabase server credentials are not configured"
+      });
     }
 
     const orderPayload = {
@@ -263,11 +309,11 @@ app.post("/order", async (req, res) => {
       payment_details: payment_details || null
     };
 
-    const { error } = await supabase.from("orders").insert(orderPayload);
+    const { error } = await insertOrderWithFallback(orderPayload);
 
     if (error) {
       console.error("Order save error:", error);
-      return res.json({ success: true, message: "Order accepted" });
+      return res.status(500).json({ success: false, message: error.message || "Unable to save order" });
     }
 
     return res.json({ success: true });
@@ -281,6 +327,10 @@ app.post("/order", async (req, res) => {
 // ================== START SERVER ==================
 
 const PORT = process.env.PORT || 3000;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.warn("⚠️ Supabase credentials missing. /signin and /order writes will fail.");
+}
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
