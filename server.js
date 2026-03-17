@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const multer = require("multer");
+const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 
@@ -174,6 +175,105 @@ app.post("/submit-consignment", upload.array("files"), async (req, res) => {
       success: false,
       error: error.response?.data || error.message
     });
+  }
+});
+
+
+// ======================================================
+// ================= SUPABASE HELPERS ===================
+// ======================================================
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+
+const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  : null;
+
+
+// ======================================================
+// ================== SIGN-IN ROUTE =====================
+// ======================================================
+
+app.post("/signin", async (req, res) => {
+  try {
+    const { name, email, phone, address } = req.body || {};
+
+    if (!name || !email || !phone || !address) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
+    }
+
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        message: "Supabase server credentials are not configured"
+      });
+    }
+
+    const payload = {
+      full_name: String(name).trim(),
+      email: String(email).trim().toLowerCase(),
+      phone: String(phone).trim(),
+      address: String(address).trim()
+    };
+
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .upsert(payload, { onConflict: "email" })
+      .select("id, email, full_name, phone, address")
+      .single();
+
+    if (error) {
+      console.error("Sign-in save error:", error);
+      return res.status(500).json({ success: false, message: error.message || "Unable to save user profile" });
+    }
+
+    return res.json({ success: true, user_id: data?.id || null, profile: data || null });
+  } catch (error) {
+    console.error("/signin error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
+// ======================================================
+// =================== ORDER ROUTE ======================
+// ======================================================
+
+app.post("/order", async (req, res) => {
+  try {
+    const { user, cart, total, payment_method, payment_details } = req.body || {};
+
+    if (!user || !Array.isArray(cart) || !cart.length || !Number(total)) {
+      return res.status(400).json({ success: false, message: "Invalid order payload" });
+    }
+
+    if (!supabase) {
+      return res.json({ success: true, message: "Order accepted" });
+    }
+
+    const orderPayload = {
+      customer_name: user?.name || null,
+      customer_email: user?.email || null,
+      customer_phone: user?.phone || null,
+      customer_address: user?.address || null,
+      items_json: cart,
+      total_amount: Number(total),
+      payment_method: payment_method || null,
+      payment_details: payment_details || null
+    };
+
+    const { error } = await supabase.from("orders").insert(orderPayload);
+
+    if (error) {
+      console.error("Order save error:", error);
+      return res.json({ success: true, message: "Order accepted" });
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("/order error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
