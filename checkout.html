@@ -228,11 +228,15 @@
   <div class="login-card">
     <h3>Sign In to Continue</h3>
     <p>One-time sign-in. Next time, you will be automatically signed in.</p>
-    <div class="login-row"><input id="name" placeholder="Name"></div>
-    <div class="login-row"><input id="email" type="email" placeholder="Email"></div>
-    <div class="login-row"><input id="phone" placeholder="Phone"></div>
-    <div class="login-row"><input id="address" placeholder="Address"></div>
-    <button class="login-submit" onclick="submitLogin()">One-Time Sign In</button>
+    <form id="signinForm" autocomplete="off" onsubmit="event.preventDefault(); submitLogin();">
+      <input type="text" name="fake_username" autocomplete="username" style="display:none">
+      <input type="password" name="fake_password" autocomplete="new-password" style="display:none">
+      <div class="login-row"><input id="name" name="ew_name" placeholder="Name" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');"></div>
+      <div class="login-row"><input id="email" name="ew_email" type="email" placeholder="Email" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');"></div>
+      <div class="login-row"><input id="phone" name="ew_phone" placeholder="Phone" inputmode="numeric" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');"></div>
+      <div class="login-row"><input id="address" name="ew_address" placeholder="Address" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');"></div>
+      <button type="submit" class="login-submit">One-Time Sign In</button>
+    </form>
     <div class="muted-mini">Your profile is saved securely.</div>
   </div>
 </div>
@@ -368,6 +372,23 @@ document.addEventListener("click", (e) => {
   loadCart();
 });
 
+function openLoginBox() {
+  const loginBox = document.getElementById("loginBox");
+  loginBox.style.display = "flex";
+
+  ["name", "email", "phone", "address"].forEach((id) => {
+    const input = document.getElementById(id);
+    input.value = "";
+    input.setAttribute("readonly", "readonly");
+  });
+
+  setTimeout(() => {
+    const first = document.getElementById("name");
+    first.focus();
+    first.removeAttribute("readonly");
+  }, 50);
+}
+
 function buy() {
   if (!cart.length) {
     alert("Cart empty");
@@ -375,7 +396,7 @@ function buy() {
   }
 
   if (!user) {
-    document.getElementById("loginBox").style.display = "flex";
+    openLoginBox();
     return;
   }
 
@@ -455,7 +476,7 @@ async function placeOrder() {
   }
 
   if (!user) {
-    document.getElementById("loginBox").style.display = "flex";
+    openLoginBox();
     return;
   }
 
