@@ -13,7 +13,7 @@ async function sendOrderEmail({ user, items, total, paymentMethod }) {
   }
 
   const listRows = items
-    .map((item) => `<li><strong>${htmlEscape(item.name)}</strong> — Size: ${htmlEscape(item.size)}</li>`)
+    .map((item) => `<li><strong>${htmlEscape(item.name)}</strong> — Qty: ${htmlEscape(item.qty)} — Price: ₹${htmlEscape(item.price)}</li>`)
     .join("");
 
   await axios.post(
@@ -34,7 +34,7 @@ async function sendOrderEmail({ user, items, total, paymentMethod }) {
           <p><strong>Address:</strong> ${htmlEscape(user.address)}</p>
           <p><strong>Payment:</strong> ${htmlEscape(paymentMethod || "Not specified")}</p>
           <p><strong>Total:</strong> ₹${htmlEscape(total)}</p>
-          <h3>Products</h3>
+          <h3>Products (Name / Qty / Price)</h3>
           <ul>${listRows}</ul>
         </div>
       `,
@@ -47,10 +47,6 @@ async function sendOrderEmail({ user, items, total, paymentMethod }) {
     }
   );
 }
-
-// ======================================================
-// ==================== ORDER ROUTE =====================
-// ======================================================
 
 app.post("/order", async (req, res) => {
   try {
