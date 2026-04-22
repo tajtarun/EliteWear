@@ -231,10 +231,10 @@
     <form id="signinForm" autocomplete="off" onsubmit="event.preventDefault(); submitLogin();">
       <input type="text" name="fake_username" autocomplete="username" style="display:none">
       <input type="password" name="fake_password" autocomplete="new-password" style="display:none">
-      <div class="login-row"><input id="name" name="ew_name" placeholder="Name" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');"></div>
-      <div class="login-row"><input id="email" name="ew_email" type="email" placeholder="Email" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');"></div>
-      <div class="login-row"><input id="phone" name="ew_phone" placeholder="Phone" inputmode="numeric" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');"></div>
-      <div class="login-row"><input id="address" name="ew_address" placeholder="Address" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');"></div>
+      <div class="login-row"><input id="name" name="ew_name" placeholder="Name" readonly onfocus="this.removeAttribute('readonly');"></div>
+      <div class="login-row"><input id="email" name="ew_email" type="email" placeholder="Email" readonly onfocus="this.removeAttribute('readonly');"></div>
+      <div class="login-row"><input id="phone" name="ew_phone" placeholder="Phone" readonly onfocus="this.removeAttribute('readonly');"></div>
+      <div class="login-row"><input id="address" name="ew_address" placeholder="Address" readonly onfocus="this.removeAttribute('readonly');"></div>
       <button type="submit" class="login-submit">One-Time Sign In</button>
     </form>
     <div class="muted-mini">Your profile is saved securely.</div>
@@ -243,217 +243,15 @@
 
 <script>
 const API_FALLBACKS = [
-  "https://elitewear-backend.onrender.com",
-  "http://127.0.0.1:3000"
+  "https://elitewear-backend.onrender.com"
 ];
-
-function safeParseJSON(value, fallback) {
-  try {
-    return JSON.parse(value);
-  } catch (error) {
-    return fallback;
-  }
-}
-
-function parsePrice(value) {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-  const cleaned = String(value ?? '').replace(/[^\d.]/g, '');
-  const parsed = Number(cleaned);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function normalizeCartItem(item) {
-  return {
-    ...item,
-    name: item?.name || item?.product_name || "Product",
-    img: item?.img || item?.image || item?.image_url || "",
-    qty: Math.max(1, Number(item?.qty || 1)),
-    price: parsePrice(item?.price ?? item?.product_price)
-  };
-}
-
-function readCart() {
-  try {
-    const raw = safeParseJSON(localStorage.getItem("cart") || "[]", []);
-    return raw.map(normalizeCartItem);
-  } catch (e) {
-    return [];
-  }
-}
-
-function writeCart(items) {
-  localStorage.setItem("cart", JSON.stringify(items));
-}
-
-function maskCard(number) {
-  const clean = String(number || '').replace(/\D/g, '');
-  if (clean.length < 4) return '••••';
-  return '•••• •••• •••• ' + clean.slice(-4);
-}
-
-function isPersistedSignedIn() {
-  try {
-    const payload = safeParseJSON(localStorage.getItem("userData") || "null", null);
-    if (!payload) return false;
-    return Boolean(payload.name && payload.email && payload.phone && payload.address && localStorage.getItem("userSignedIn") === "true");
-  } catch {
-    return false;
-  }
-}
-
-let cart = readCart();
-let user = safeParseJSON(localStorage.getItem("userData") || "null", null);
-if (!isPersistedSignedIn()) user = null;
-
-function loadCart() {
-  cart = readCart();
-
-  const box = document.getElementById("cartBox");
-  const summary = document.getElementById("summaryLines");
-  let subtotal = 0;
-  let qtyTotal = 0;
-  box.innerHTML = "";
-
-  cart.forEach((item, index) => {
-    const lineTotal = item.price * item.qty;
-    subtotal += lineTotal;
-    qtyTotal += item.qty;
-
-    const row = document.createElement("div");
-    row.className = "item";
-    row.innerHTML = `
-      <div class="item-left">
-        <img src="${item.img || "https://via.placeholder.com/200x200?text=No+Image"}" alt="${item.name}">
-        <div>
-          <div class="item-name">${item.name}</div>
-          <div class="item-meta">₹${item.price.toLocaleString("en-IN")} each</div>
-          <div class="qty-wrap">
-            <button class="qty-btn" data-action="minus" data-index="${index}">-</button>
-            <div class="qty-val">${item.qty}</div>
-            <button class="qty-btn" data-action="plus" data-index="${index}">+</button>
-          </div>
-        </div>
-      </div>
-      <div class="item-right">
-        <div class="item-total">₹${lineTotal.toLocaleString("en-IN")}</div>
-        <div class="item-meta">Item total</div>
-      </div>
-    `;
-    box.appendChild(row);
-  });
-
-  if (!cart.length) {
-    box.innerHTML = "<p>Your cart is empty.</p>";
-  }
-
-  const paymentMethod = localStorage.getItem("paymentMethod") || "Not selected";
-  const paymentDetails = safeParseJSON(localStorage.getItem("paymentDetails") || "{}", {});
-
-  let paymentInfo = "Not selected";
-  if (paymentMethod === 'UPI') paymentInfo = paymentDetails.upiId || 'UPI';
-  if (paymentMethod === 'Card') paymentInfo = maskCard(paymentDetails.cardNumber);
-  if (paymentMethod === 'COD') paymentInfo = 'Cash on Delivery';
-
-  summary.innerHTML = `
-    <div class="line"><span>Items (${qtyTotal})</span><strong>₹${subtotal.toLocaleString("en-IN")}</strong></div>
-    <div class="line"><span>Payment Method</span><strong>${paymentMethod}</strong></div>
-    <div class="line"><span>Payment Details</span><strong>${paymentInfo}</strong></div>
-  `;
-
-  document.getElementById("total").innerText = "₹" + subtotal.toLocaleString("en-IN");
-  return subtotal;
-}
-
-document.addEventListener("click", (e) => {
-  const btn = e.target.closest(".qty-btn");
-  if (!btn) return;
-
-  const idx = Number(btn.dataset.index);
-  const action = btn.dataset.action;
-  const items = readCart();
-  if (!items[idx]) return;
-
-  if (action === "minus" && items[idx].qty > 1) items[idx].qty -= 1;
-  if (action === "plus") items[idx].qty += 1;
-
-  writeCart(items);
-  loadCart();
-});
-
-function openLoginBox() {
-  const loginBox = document.getElementById("loginBox");
-  loginBox.style.display = "flex";
-
-  ["name", "email", "phone", "address"].forEach((id) => {
-    const input = document.getElementById(id);
-    input.value = "";
-    input.setAttribute("readonly", "readonly");
-  });
-
-  setTimeout(() => {
-    const first = document.getElementById("name");
-    first.focus();
-    first.removeAttribute("readonly");
-  }, 50);
-}
-
-function buy() {
-  if (!cart.length) {
-    alert("Cart empty");
-    return;
-  }
-
-  if (!user) {
-    openLoginBox();
-    return;
-  }
-
-  placeOrder();
-}
-
-function validateUserInput(userInfo) {
-  if (!userInfo.name || !userInfo.email || !userInfo.phone || !userInfo.address) return false;
-  if (!/^\S+@\S+\.\S+$/.test(userInfo.email)) return false;
-  if (!/^\d{10,15}$/.test(userInfo.phone.replace(/\D/g, ''))) return false;
-  return true;
-}
-
-async function submitLogin() {
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const address = document.getElementById("address").value.trim();
-
-  const profile = { name, email, phone, address };
-
-  if (!validateUserInput(profile)) {
-    alert("Please enter valid name, email, phone, and address.");
-    return;
-  }
-
-  try {
-    const savedUser = await saveSignedInUser(profile);
-    user = savedUser;
-  } catch (error) {
-    // Graceful fallback for static hosting (GitHub Pages) when backend is unavailable.
-    user = {
-      ...profile,
-      offline_profile: true
-    };
-  }
-
-  localStorage.setItem("userData", JSON.stringify(user));
-  localStorage.setItem("userSignedIn", "true");
-  document.getElementById("loginBox").style.display = "none";
-  placeOrder();
-}
 
 async function fetchWithFallback(path, options) {
   let lastError = null;
 
   for (const baseUrl of API_FALLBACKS) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6000);
+    const timer = setTimeout(() => controller.abort(), 3000);
 
     try {
       const res = await fetch(`${baseUrl}${path}`, {
@@ -470,73 +268,6 @@ async function fetchWithFallback(path, options) {
 
   throw lastError || new Error("Network error");
 }
-
-async function saveSignedInUser(userInfo) {
-  const { res } = await fetchWithFallback("/signin", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userInfo)
-  });
-
-  if (!res.ok) {
-    throw new Error("Sign-in save failed");
-  }
-
-  const payload = await res.json().catch(() => ({}));
-  return {
-    ...userInfo,
-    ...(payload?.user_id ? { user_id: payload.user_id } : {})
-  };
-}
-
-async function placeOrder() {
-  const total = loadCart();
-  if (!Number(total) || total <= 0) {
-    alert("Cart total is invalid. Please update quantities and try again.");
-    return;
-  }
-
-  if (!user) {
-    openLoginBox();
-    return;
-  }
-
-  const orderPayload = {
-    user,
-    cart: readCart(),
-    total,
-    payment_method: localStorage.getItem("paymentMethod") || "Not specified",
-    payment_details: safeParseJSON(localStorage.getItem("paymentDetails") || "{}", {})
-  };
-
-  try {
-    const { res, baseUrl } = await fetchWithFallback("/order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(orderPayload)
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (res.ok && data.success) {
-      alert("Order Placed Successfully!");
-      localStorage.removeItem("cart");
-      window.location.href = "thankyou.html";
-      return;
-    }
-
-    alert(data.message || `Order failed on ${baseUrl}. Please try again.`);
-  } catch (err) {
-    const queue = safeParseJSON(localStorage.getItem("pendingOrders") || "[]", []);
-    queue.push({ ...orderPayload, queued_at: new Date().toISOString() });
-    localStorage.setItem("pendingOrders", JSON.stringify(queue));
-    localStorage.removeItem("cart");
-    alert("Backend is unreachable right now. Your order is safely queued and we will process it once server is online.");
-    window.location.href = "thankyou.html";
-  }
-}
-
-loadCart();
 </script>
 
 </body>
